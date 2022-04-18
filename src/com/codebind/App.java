@@ -9,13 +9,9 @@ import javax.swing.*;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Objects;
-import java.util.Scanner;
 
 public class App {
     private JPanel panelMain;
@@ -36,24 +32,121 @@ public class App {
     private JLabel RamLabel;
     private JLabel PageTableLabel;
 
-    private static int welkeXMLFile=1;
-    private static List<Process> process_list;
-    private static int timer;
+    static final int welkeXMLFile=1;
+    static List<Process> proces_lijst;
+    static int timer;
+    static Queue<Instruction> instructions;
 
     public static void main(String[] argv) {
         Scanner sc = new Scanner(System.in);
 
         initialiseren();
-
+        readingWholeXMLFile();
         displayJFrame();
 
-        System.out.println(process_list);
+        //System.out.println(instructions);
 
         sc.close();
     }
 
+
+
+
+
+
     private static void initialiseren() {
-        process_list = new ArrayList<>();
+        proces_lijst = new ArrayList<>();
+        timer = 0;
+        instructions = new Queue<Instruction>() {
+            @Override
+            public boolean add(Instruction instruction) {
+                return false;
+            }
+            @Override
+            public boolean offer(Instruction instruction) {
+                return false;
+            }
+
+            @Override
+            public Instruction remove() {
+                return null;
+            }
+
+            @Override
+            public Instruction poll() {
+                return null;
+            }
+
+            @Override
+            public Instruction element() {
+                return null;
+            }
+
+            @Override
+            public Instruction peek() {
+                return null;
+            }
+
+            @Override
+            public int size() {
+                return 0;
+            }
+
+            @Override
+            public boolean isEmpty() {
+                return false;
+            }
+
+            @Override
+            public boolean contains(Object o) {
+                return false;
+            }
+
+            @Override
+            public Iterator<Instruction> iterator() {
+                return null;
+            }
+
+            @Override
+            public Object[] toArray() {
+                return new Object[0];
+            }
+
+            @Override
+            public <T> T[] toArray(T[] a) {
+                return null;
+            }
+
+            @Override
+            public boolean remove(Object o) {
+                return false;
+            }
+
+            @Override
+            public boolean containsAll(Collection<?> c) {
+                return false;
+            }
+
+            @Override
+            public boolean addAll(Collection<? extends Instruction> c) {
+                return false;
+            }
+
+            @Override
+            public boolean removeAll(Collection<?> c) {
+                return false;
+            }
+
+            @Override
+            public boolean retainAll(Collection<?> c) {
+                return false;
+            }
+
+            @Override
+            public void clear() {
+
+            }
+        };
     }
 
     private static void displayJFrame() {
@@ -65,115 +158,51 @@ public class App {
         frame.setSize(new Dimension(1200, 700));
     }
 
-    public enum OperationProcess {
-        Start,
-        Write,
-        Read,
-        Terminate
-    }
-
-    public static class PageTable {
-        private final int presentbit;
-        private final int modifybit;
-        private final int lastAccesTime;
-        private final int correspondingframeNumber;       //[0,11]
-
-
-        public PageTable(int presentbit, int modifybit, int lastAccesTime, int correspondingframeNumber) {
-            this.presentbit = presentbit;
-            this.modifybit = modifybit;
-            this.lastAccesTime = lastAccesTime;
-            this.correspondingframeNumber = correspondingframeNumber;
-        }
-
-        @Override
-        public String toString() {
-            return "PageTable{" +
-                    "presentbit=" + presentbit +
-                    ", modifybit=" + modifybit +
-                    ", lastAccesTime=" + lastAccesTime +
-                    ", correspondingframeNumber=" + correspondingframeNumber +
-                    '}';
-        }
-    }
-
-    public static class Process {
-        private final int processID;
-        private final OperationProcess operation;
-        private final int address;
-        private PageTable pageTable;
-
-        public Process(int processID, String operation, int address) {
-            this.processID = processID;
-            this.operation = OperationProcess.valueOf(operation);
-            this.address = address;
-        }
-
-        @Override
-        public String toString() {
-            return "Process{" +
-                    "processID=" + processID +
-                    ", operation=" + operation +
-                    ", address=" + address +
-                    ", pageTable=" + pageTable +
-                    '}' + "\n";
-        }
-    }
-
-    public static class ReadXMLFile {
-        public static void readingWholeXMLFile(int welkXMLFile){
-            int p = 0;
-            File file = null;
-            try {
-                switch (welkXMLFile) {
-                    case 1 -> file = new File("Instructions_30_3.xml");
-                    case 2 -> file = new File("Instructions_20000_4.xml");
-                    case 3 -> file = new File("Instructions_20000_20.xml");
-                    default -> {
-                    }
+    public static void readingWholeXMLFile(){
+        File file = null;
+        try {
+            switch (welkeXMLFile) {
+                case 1 -> file = new File("Instructions_30_3.xml");
+                case 2 -> file = new File("Instructions_20000_4.xml");
+                case 3 -> file = new File("Instructions_20000_20.xml");
+                default -> {
                 }
-                DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-                DocumentBuilder db = dbf.newDocumentBuilder();
-                Document doc = db.parse(file);
-                doc.getDocumentElement().normalize();
-                NodeList nodeList = doc.getElementsByTagName("instruction");
-                for (int itr = 0; itr < nodeList.getLength(); itr++) {
-                    Node node = nodeList.item(itr);
-                    if (node.getNodeType() == Node.ELEMENT_NODE) {
-                        Element eElement = (Element) node;
-                        p++;
-                        String operation = eElement.getElementsByTagName("operation").item(0).getTextContent();
-                        if (Objects.equals(operation, "Start")){
-                            Process process = new Process(
-                                    Integer.parseInt(eElement.getElementsByTagName("processID").item(0).getTextContent()),
-                                    operation,
-                                    Integer.parseInt(eElement.getElementsByTagName("address").item(0).getTextContent())
+            }
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            DocumentBuilder db = dbf.newDocumentBuilder();
+            Document doc = db.parse(file);
+            doc.getDocumentElement().normalize();
+            NodeList nodeList = doc.getElementsByTagName("instruction");
+            for (int itr = 0; itr < nodeList.getLength(); itr++) {
+                Node node = nodeList.item(itr);
+                if (node.getNodeType() == Node.ELEMENT_NODE) {
+                    Element eElement = (Element) node;
+                    Instruction instruction = new Instruction(
+                            Integer.parseInt(eElement.getElementsByTagName("processID").item(0).getTextContent()),
+                            eElement.getElementsByTagName("operation").item(0).getTextContent(),
+                            Integer.parseInt(eElement.getElementsByTagName("address").item(0).getTextContent())
                             );
-                            process_list.add(process);
-                            System.out.println(process);
-                        }
-                        else {
-                            System.out.println(operation);
-                        }
-                    }
+                    instructions.add(instruction);
+                    System.out.println(instruction);
                 }
             }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
         }
     }
+
+
 
     public App() {
         oneProcess.addActionListener(e -> {
             //JOptionPane.showMessageDialog(null, "Hello world");
-            TimerValue.setText(String.valueOf(timer));
+            TimerValue.setText(String.valueOf(timer));              // voorbeeld
             TimerValue.setVisible(true);
         });
         allProcesses.addActionListener(e -> {
-            ReadXMLFile.readingWholeXMLFile(welkeXMLFile);
-            System.out.println(process_list);
+            System.out.println(proces_lijst);
         });
     }
 }
