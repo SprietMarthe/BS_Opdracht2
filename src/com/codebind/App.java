@@ -62,7 +62,7 @@ public class App {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
         frame.setVisible(true);
-        frame.setSize(new Dimension(800, 600));
+        frame.setSize(new Dimension(1200, 700));
     }
 
     public enum OperationProcess {
@@ -116,7 +116,7 @@ public class App {
                     ", operation=" + operation +
                     ", address=" + address +
                     ", pageTable=" + pageTable +
-                    '}';
+                    '}' + "\n";
         }
     }
 
@@ -166,19 +166,14 @@ public class App {
     }
 
     public App() {
-        oneProcess.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                //JOptionPane.showMessageDialog(null, "Hello world");
-                TimerValue.setText(String.valueOf(timer));
-                TimerValue.setVisible(true);
-            }
+        oneProcess.addActionListener(e -> {
+            //JOptionPane.showMessageDialog(null, "Hello world");
+            TimerValue.setText(String.valueOf(timer));
+            TimerValue.setVisible(true);
         });
-        allProcesses.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                ReadXMLFile.readingWholeXMLFile(welkeXMLFile);
-            }
+        allProcesses.addActionListener(e -> {
+            ReadXMLFile.readingWholeXMLFile(welkeXMLFile);
+            System.out.println(process_list);
         });
     }
 }
