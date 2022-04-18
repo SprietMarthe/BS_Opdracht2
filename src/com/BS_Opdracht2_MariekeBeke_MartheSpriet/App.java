@@ -1,4 +1,4 @@
-package src.com.codebind;
+package src.com.BS_Opdracht2_MariekeBeke_MartheSpriet;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -43,8 +43,6 @@ public class App {
         initialiseren();
         readingWholeXMLFile();
         displayJFrame();
-
-        //System.out.println(instructions);
 
         sc.close();
     }
