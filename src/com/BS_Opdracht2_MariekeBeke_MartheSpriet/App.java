@@ -105,6 +105,9 @@ public class App {
         }
     }
 
+
+
+
     private void executeOneInstruction() {
         Instruction instruction = instructions.poll();
         System.out.print(instruction);
@@ -122,6 +125,8 @@ public class App {
             operationTerminate(instruction);
         }
     }
+
+
 
     private void operationTerminate(Instruction instruction) {
         Process process = null;
@@ -153,6 +158,8 @@ public class App {
         process_list.add(process);
         addProcessToRAM();
     }
+
+
 
     private void removeProcessFromRAM() {
         int numberOfProcessesPresent = present_process_list.size();
@@ -194,6 +201,9 @@ public class App {
         System.out.println("numberOfProcessesPresent: " + numberOfProcessesPresent);
         System.out.println("numberOfFramesPerProcess: " + numberOfFramesPerProcess);
     }
+
+
+
 
     public App() {
         oneProcess.addActionListener(e -> {
