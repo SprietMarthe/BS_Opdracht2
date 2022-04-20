@@ -133,7 +133,7 @@ public class App {
         process_list.remove(process);
         present_process_list.remove(process);
         System.out.print("Process verwijderd: " + process);
-        organizeRAM();
+        removeProcessFromRAM();
     }
 
     private void operationWrite(Instruction instruction) {
@@ -151,17 +151,41 @@ public class App {
         System.out.print("Process toegevoegd: " + process);
         present_process_list.add(process);
         process_list.add(process);
-        organizeRAM();
+        addProcessToRAM();
     }
 
-    private void organizeRAM() {
+    private void removeProcessFromRAM() {
+        int numberOfProcessesPresent = present_process_list.size();
+        int numberOfFramesPerProcess = numberOfFrames/numberOfProcessesPresent;
+//        int[] frameNumbersOfProcess1 = new int[12];
+//        int[] frameNumbersOfProcess2 = new int[12];
+//        int[] frameNumbersOfProcess3 = new int[12];
+//        int[] frameNumbersOfProcess4 = new int[12];
+//
+//        for (int i=0; i<present_process_list.size(); i++){
+//            pidPresentProcesses[i] = present_process_list.get(i).getProcessID();
+//        }
+        List<Frame> old_list_frames = ram.getList_frames();
+//        List<Frame> new_list_frames = new ArrayList<>();
+
+        for (int i = 0; i<numberOfProcessesPresent; i++){
+            for (int j=0; j<numberOfFramesPerProcess; j++){
+                ram.getList_frames().get(i*numberOfFramesPerProcess + j)
+                        .setPid(present_process_list.get(i).getProcessID());
+                ram.getList_frames().get(i*numberOfFramesPerProcess + j)
+                        .setPagenummer(old_list_frames.get(i*numberOfFramesPerProcess + j).getPagenummer());
+            }
+        }
+        System.out.println("\nRam herverdeeld: " + ram);
+        System.out.println("numberOfProcessesPresent: " + numberOfProcessesPresent);
+        System.out.println("numberOfFramesPerProcess: " + numberOfFramesPerProcess);
+    }
+
+    private void addProcessToRAM() {
         int numberOfProcessesPresent = present_process_list.size();
         int numberOfFramesPerProcess = numberOfFrames/numberOfProcessesPresent;
         for (int i = 0; i<numberOfProcessesPresent; i++){
             for (int j=0; j<numberOfFramesPerProcess; j++){
-//                if (ram.getList_frames().get(i*numberOfFramesPerProcess + j).getPid() != -1){
-//
-//                }
                 ram.getList_frames().get(i*numberOfFramesPerProcess + j)
                         .setPid(present_process_list.get(i).getProcessID());
             }
@@ -170,7 +194,6 @@ public class App {
         System.out.println("numberOfProcessesPresent: " + numberOfProcessesPresent);
         System.out.println("numberOfFramesPerProcess: " + numberOfFramesPerProcess);
     }
-
 
     public App() {
         oneProcess.addActionListener(e -> {
