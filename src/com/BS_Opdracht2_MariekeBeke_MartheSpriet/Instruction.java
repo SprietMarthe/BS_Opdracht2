@@ -1,14 +1,16 @@
 package src.com.BS_Opdracht2_MariekeBeke_MartheSpriet;
 
 public class Instruction {
-    private static int processID;
-    private static OperationProcess operation;
-    private static int address;
+    private int processID;
+    private OperationProcess operation;
+    private int address;
+
+
 
     public Instruction(int processID, String operation, int address) {
-        Instruction.processID = processID;
-        Instruction.operation = OperationProcess.valueOf(operation);
-        Instruction.address = address;
+        this.processID = processID;
+        this.operation = OperationProcess.valueOf(operation);
+        this.address = address;
     }
 
 
@@ -22,22 +24,22 @@ public class Instruction {
                 ", address=" + address +
                 '}' + "\n";
     }
-    public static int getProcessID() {
+    public int getProcessID() {
         return processID;
     }
-    public static void setProcessID(int processID) {
-        Instruction.processID = processID;
+    public void setProcessID(int processID) {
+        this.processID = processID;
     }
-    public static OperationProcess getOperation() {
+    public OperationProcess getOperation() {
         return operation;
     }
-    public static void setOperation(OperationProcess operation) {
-        Instruction.operation = operation;
+    public void setOperation(OperationProcess operation) {
+        this.operation = operation;
     }
-    public static int getAddress() {
+    public int getAddress() {
         return address;
     }
-    public static void setAddress(int address) {
-        Instruction.address = address;
+    public void setAddress(int address) {
+        this.address = address;
     }
 }

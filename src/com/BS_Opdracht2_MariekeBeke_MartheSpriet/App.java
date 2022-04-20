@@ -33,9 +33,13 @@ public class App {
     private JLabel PageTableLabel;
 
     static final int welkeXMLFile=1;
-    static List<Process> proces_lijst;
+    static List<Process> present_process_list;
+    static List<Process> process_list;
     static int timer;
     static Queue<Instruction> instructions;
+    static RAM ram;
+    static final int numberOfFrames=12;
+    static final int numberOfPages=16;
 
     public static void main(String[] argv) {
         Scanner sc = new Scanner(System.in);
@@ -53,100 +57,12 @@ public class App {
 
 
     private static void initialiseren() {
-        proces_lijst = new ArrayList<>();
+        present_process_list = new ArrayList<>();
+        process_list = new ArrayList<>();
         timer = 0;
-        instructions = new Queue<Instruction>() {
-            @Override
-            public boolean add(Instruction instruction) {
-                return false;
-            }
-            @Override
-            public boolean offer(Instruction instruction) {
-                return false;
-            }
-
-            @Override
-            public Instruction remove() {
-                return null;
-            }
-
-            @Override
-            public Instruction poll() {
-                return null;
-            }
-
-            @Override
-            public Instruction element() {
-                return null;
-            }
-
-            @Override
-            public Instruction peek() {
-                return null;
-            }
-
-            @Override
-            public int size() {
-                return 0;
-            }
-
-            @Override
-            public boolean isEmpty() {
-                return false;
-            }
-
-            @Override
-            public boolean contains(Object o) {
-                return false;
-            }
-
-            @Override
-            public Iterator<Instruction> iterator() {
-                return null;
-            }
-
-            @Override
-            public Object[] toArray() {
-                return new Object[0];
-            }
-
-            @Override
-            public <T> T[] toArray(T[] a) {
-                return null;
-            }
-
-            @Override
-            public boolean remove(Object o) {
-                return false;
-            }
-
-            @Override
-            public boolean containsAll(Collection<?> c) {
-                return false;
-            }
-
-            @Override
-            public boolean addAll(Collection<? extends Instruction> c) {
-                return false;
-            }
-
-            @Override
-            public boolean removeAll(Collection<?> c) {
-                return false;
-            }
-
-            @Override
-            public boolean retainAll(Collection<?> c) {
-                return false;
-            }
-
-            @Override
-            public void clear() {
-
-            }
-        };
+        instructions = new LinkedList<>();
+        ram = new RAM(numberOfFrames);
     }
-
     private static void displayJFrame() {
         JFrame frame= new JFrame("App");
         frame.setContentPane(new App().panelMain);
@@ -155,7 +71,6 @@ public class App {
         frame.setVisible(true);
         frame.setSize(new Dimension(1200, 700));
     }
-
     public static void readingWholeXMLFile(){
         File file = null;
         try {
@@ -181,7 +96,6 @@ public class App {
                             Integer.parseInt(eElement.getElementsByTagName("address").item(0).getTextContent())
                             );
                     instructions.add(instruction);
-                    System.out.println(instruction);
                 }
             }
         }
@@ -191,16 +105,89 @@ public class App {
         }
     }
 
+    private void executeOneInstruction() {
+        Instruction instruction = instructions.poll();
+        System.out.print(instruction);
+        assert instruction != null;
+        if (instruction.getOperation() == OperationProcess.Start){
+            operationStart(instruction);
+        }
+        else if (instruction.getOperation() == OperationProcess.Read){
+            operationRead(instruction);
+        }
+        else if (instruction.getOperation() == OperationProcess.Write){
+            operationWrite(instruction);
+        }
+        else if (instruction.getOperation() == OperationProcess.Terminate){
+            operationTerminate(instruction);
+        }
+    }
+
+    private void operationTerminate(Instruction instruction) {
+        Process process = null;
+        for (Process p: process_list){
+            if (p.getProcessID() == instruction.getProcessID()){
+                process = p;
+            }
+        }
+        process_list.remove(process);
+        present_process_list.remove(process);
+        System.out.print("Process verwijderd: " + process);
+        organizeRAM();
+    }
+
+    private void operationWrite(Instruction instruction) {
+    }
+
+    private void operationRead(Instruction instruction) {
+    }
+
+    private void operationStart(Instruction instruction) {
+        Process process = new Process(
+                instruction.getProcessID(),
+                new PageTable(timer, numberOfPages),
+                0
+        );
+        System.out.print("Process toegevoegd: " + process);
+        present_process_list.add(process);
+        process_list.add(process);
+        organizeRAM();
+    }
+
+    private void organizeRAM() {
+        int numberOfProcessesPresent = present_process_list.size();
+        int numberOfFramesPerProcess = numberOfFrames/numberOfProcessesPresent;
+        for (int i = 0; i<numberOfProcessesPresent; i++){
+            for (int j=0; j<numberOfFramesPerProcess; j++){
+//                if (ram.getList_frames().get(i*numberOfFramesPerProcess + j).getPid() != -1){
+//
+//                }
+                ram.getList_frames().get(i*numberOfFramesPerProcess + j)
+                        .setPid(present_process_list.get(i).getProcessID());
+            }
+        }
+        System.out.println("\nRam herverdeeld: " + ram);
+        System.out.println("numberOfProcessesPresent: " + numberOfProcessesPresent);
+        System.out.println("numberOfFramesPerProcess: " + numberOfFramesPerProcess);
+    }
 
 
     public App() {
         oneProcess.addActionListener(e -> {
-            //JOptionPane.showMessageDialog(null, "Hello world");
-            TimerValue.setText(String.valueOf(timer));              // voorbeeld
-            TimerValue.setVisible(true);
+            if (!instructions.isEmpty()){
+                executeOneInstruction();
+            }
+            else
+                System.out.println("All instructions are executed!");
+
+//            //JOptionPane.showMessageDialog(null, "Hello world");
+//            TimerValue.setText(String.valueOf(timer));              // voorbeeld
+//            TimerValue.setVisible(true);
         });
         allProcesses.addActionListener(e -> {
-            System.out.println(proces_lijst);
+            while(!instructions.isEmpty()){
+                executeOneInstruction();
+            }
         });
     }
 }
