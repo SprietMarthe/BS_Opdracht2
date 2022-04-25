@@ -25,8 +25,9 @@ public class Page {
         this.correspondingFrameNumber = correspondingFrameNumber;
     }
 
+    public Page() {
 
-
+    }
 
 
     @Override

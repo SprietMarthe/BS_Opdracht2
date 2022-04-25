@@ -6,6 +6,9 @@ public class Process {
     private int numberOfWrites;
 
 
+    public Process() {
+    }
+
 
 
     public Process(int processID, PageTable pageTable, int numberOfWrites) {
