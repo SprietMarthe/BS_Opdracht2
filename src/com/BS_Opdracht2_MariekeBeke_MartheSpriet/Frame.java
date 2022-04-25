@@ -19,7 +19,8 @@ public class Frame {
         this.framenummer = framenummer;
     }
 
-
+    public Frame() {
+    }
 
 
     @Override
