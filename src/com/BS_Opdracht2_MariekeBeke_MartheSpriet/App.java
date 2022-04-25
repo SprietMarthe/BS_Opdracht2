@@ -143,6 +143,38 @@ public class App {
     }
 
     private void operationWrite(Instruction instruction) {
+        // controle of process al in de RAM zit
+        boolean processIsInRAM = false;
+        for (int i=0; i<present_process_list.size(); i++) {
+            if (instruction.getProcessID() == present_process_list.get(i).getProcessID()) processIsInRAM=true;
+        }
+
+        // indien niet in RAM, toevoegen
+        if (!processIsInRAM) {
+            addProcessToRAM();      // gebruik hier methode die jij gemaakt heb, ben niet zeker of mijn gebruik juist is
+        }
+
+        // controleren of page al in RAM zit
+        boolean pageIsInRAM = false;
+        Page newPage = new Page(instruction.getAddress()/4096, 0, 0, 0, -1);
+        for (Frame f : ram.getList_frames()) {
+            if ((f.getPid() == instruction.getProcessID() && (f.getPagenummer() == instruction.getAddress() / 4096)))
+                pageIsInRAM = true;
+        }
+
+        // indien niet in RAM, toevoegen
+        int frameNumberOfChange = -1;
+        if (!pageIsInRAM) {
+            // zoek least recently used
+            Page lru = leastRecentlyUsed();
+            // eventueel wegschrijven, wordt in functie gecontroleerd als nodig
+            frameNumberOfChange = removePageFromRAM(lru);
+            // page toevoegen
+            addPageToRAM(newPage, frameNumberOfChange, instruction);
+        }
+        newPage.setLastAccessTime(timer);
+        newPage.setModifyBit(1);
+
         timer++;
     }
 
