@@ -273,12 +273,9 @@ public class App {
                 process = p;
             }
         }
-        process_list.remove(process);
-        present_process_list.remove(process);
         System.out.print("Process verwijderd: " + process.getProcessID());
         removeProcessFromRAM(process);
     }
-
     private void operationWrite(Instruction instruction) {
         // controle of process al in de RAM zit
         boolean processIsInRAM = false;
@@ -314,7 +311,6 @@ public class App {
 
         timer++;
     }
-
     private void operationRead(Instruction instruction) {
         // controle of process al in de RAM zit
         boolean processIsInRAM = false;
@@ -349,7 +345,6 @@ public class App {
 
         timer++;
     }
-
     private void operationStart(Instruction instruction) {
         Process process = new Process(
                 instruction.getProcessID(),
@@ -362,23 +357,76 @@ public class App {
     }
 
 
-    private void removeProcessFromRAM(Process process) {
-        int numberOfProcessesPresent = present_process_list.size();
-        int numberOfFramesPerProcess = numberOfFrames/numberOfProcessesPresent;
 
-        List<Frame> nogVerdelenFrames = new ArrayList<>();
-        for (int i=0; i<numberOfFrames; i++){
-            Frame f = ram.getList_frames().get(i);
-            if (f.getPid() == process.getProcessID()){
-                System.out.println("process: " + process.getProcessID());
-                System.out.println("frame: " + f.getFramenummer());
-                nogVerdelenFrames.add(f);
+
+    private void removeProcessFromRAM(Process process) {
+//        int numberOfProcessesPresent = present_process_list.size();
+//        int numberOfFramesPerProcess = numberOfFrames/numberOfProcessesPresent;
+//
+//        List<Frame> nogVerdelenFrames = new ArrayList<>();
+//        for (int i=0; i<numberOfFrames; i++){
+//            Frame f = ram.getList_frames().get(i);
+//            if (f.getPid() == process.getProcessID()){
+//                System.out.println("process: " + process.getProcessID());
+//                System.out.println("frame: " + f.getFramenummer());
+//                nogVerdelenFrames.add(f);
+//            }
+//        }
+//        verdeelFrames(nogVerdelenFrames, numberOfFramesPerProcess);
+//        System.out.println("numberOfProcessesPresent: " + numberOfProcessesPresent);
+//        System.out.println("numberOfFramesPerProcess: " + numberOfFramesPerProcess);
+
+        int aantalFramesToegevoegdAanAndereProcesses = checkHoeveelFramesPerProcessToevoegen();
+        System.out.println("\n# Frames per process toegevoegd: " + aantalFramesToegevoegdAanAndereProcesses);
+
+
+        List<Frame> toegevoegdeFrames = null;
+        for (Process p : present_process_list){
+            if (p == process){
+                toegevoegdeFrames = findAllFramesPerProcess(p);
+                System.out.println("toegevoegdeFrames aan andere processen: " + toegevoegdeFrames);
             }
         }
-        verdeelFrames(nogVerdelenFrames, numberOfFramesPerProcess);
-        System.out.println("numberOfProcessesPresent: " + numberOfProcessesPresent);
-        System.out.println("numberOfFramesPerProcess: " + numberOfFramesPerProcess);
+        if (toegevoegdeFrames != null){
+            for (Process p : process_list){
+                if (p == process){
+                    List<Page> list_pages_verwijderdUitRam = p.getPageTable().getList_pages();
+                    for (Frame f : toegevoegdeFrames){
+                        if (f.getPagenummer() != -1) {
+                            list_pages_verwijderdUitRam.get(f.getPagenummer()).setPresentBit(0);
+                            list_pages_verwijderdUitRam.get(f.getPagenummer()).setLastAccessTime(timer);
+                            list_pages_verwijderdUitRam.get(f.getPagenummer()).setCorrespondingFrameNumber(-1);
+                        }
+                    }
+                }
+            }
+            present_process_list.remove(process);
+            for (int j=0; j<present_process_list.size(); j++){
+                for (int i=0; i<aantalFramesToegevoegdAanAndereProcesses; i++){
+                    toegevoegdeFrames.get(i + j*aantalFramesToegevoegdAanAndereProcesses).setPid(present_process_list.get(j).getProcessID());
+                    toegevoegdeFrames.get(i + j*aantalFramesToegevoegdAanAndereProcesses).setPagenummer(-1);
+                }
+            }
+        }
     }
+    private int checkHoeveelFramesPerProcessToevoegen() {
+        if (present_process_list.size() == 1){
+            return 0;
+        }
+        else if(present_process_list.size() == 2){
+            return 6;
+        }
+        else if(present_process_list.size() == 3){
+            return 2;
+        }
+        else if(present_process_list.size() == 4){
+            return 1;
+        }
+        System.out.println("numberOfProcessesPresent: " + present_process_list.size());
+        return 0;
+    }
+
+
     private void addProcessToRAM(int processID) {
         Process process = null;
         for (Process p: process_list){
@@ -411,24 +459,6 @@ public class App {
         System.out.println("\nRam herverdeeld: " + ram);
     }
 
-    private void verdeelFrames(List<Frame> nogVerdelenFrames, int numberOfFramesPerProcess) {
-        int welkeFrameIndex = 0;
-        for (int i=0; i<present_process_list.size(); i++){
-            Process process = present_process_list.get(i);
-            while (aantalFramesProcess(process) < numberOfFramesPerProcess){
-                ram.getList_frames().get(nogVerdelenFrames.get(welkeFrameIndex).getFramenummer()).setPid(process.getProcessID());
-                ram.getList_frames().get(nogVerdelenFrames.get(welkeFrameIndex).getFramenummer()).setPagenummer(-1);
-            }
-        }
-    }
-    private int aantalFramesProcess(Process process) {
-        int aantalFrames = 0;
-        for (int i=0; i<numberOfFrames; i++){
-            if (ram.getList_frames().get(i).getPid() == process.getProcessID())
-                aantalFrames++;
-        }
-        return aantalFrames;
-    }
     private List<Frame> findLRUFrame(List<Frame> verwijderdeFrames, List<Frame> huidigeFramesPerProcess, int aantalNogVerwijderen) {
         for (int i=0; i<aantalNogVerwijderen; i++){
             Frame LRUFrame = null;
