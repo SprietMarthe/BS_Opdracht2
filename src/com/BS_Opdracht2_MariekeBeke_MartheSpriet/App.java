@@ -78,7 +78,7 @@ public class App {
     private JLabel PN5_FN;
     private JLabel PN6_FN;
     private JLabel PN7_FN;
-    private JLabel PN_8FN;
+    private JLabel PN8_FN;
     private JLabel PN9_FN;
     private JLabel PN10_FN;
     private JLabel PN11_FN;
@@ -258,6 +258,7 @@ public class App {
         else if (instruction.getOperation() == OperationProcess.Terminate){
             operationTerminate(instruction);
         }
+        changeGUIValuesOneProcess(instruction);
     }
 
 
@@ -272,7 +273,7 @@ public class App {
         process_list.remove(process);
         present_process_list.remove(process);
         System.out.print("Process verwijderd: " + process);
-        removeProcessFromRAM();
+        removeProcessFromRAM(process);
     }
 
     private void operationWrite(Instruction instruction) {
@@ -284,7 +285,7 @@ public class App {
 
         // indien niet in RAM, toevoegen
         if (!processIsInRAM) {
-            addProcessToRAM();      // gebruik hier methode die jij gemaakt heb, ben niet zeker of mijn gebruik juist is
+            addProcessToRAM(instruction.getProcessID());      // gebruik hier methode die jij gemaakt heb, ben niet zeker of mijn gebruik juist is
         }
 
         // controleren of page al in RAM zit
@@ -320,7 +321,7 @@ public class App {
 
         // indien niet in RAM, toevoegen
         if (!processIsInRAM) {
-            addProcessToRAM();      // gebruik hier methode die jij gemaakt heb, ben niet zeker of mijn gebruik juist is
+            addProcessToRAM(instruction.getProcessID());      // gebruik hier methode die jij gemaakt heb, ben niet zeker of mijn gebruik juist is
         }
 
         // controleren of page al in RAM zit
@@ -352,46 +353,181 @@ public class App {
                 new PageTable(timer, numberOfPages),
                 0
         );
-        System.out.print("Process toegevoegd: " + process);
-        present_process_list.add(process);
+        System.out.print("Process toegevoegd: " + process.getProcessID());
         process_list.add(process);
-        addProcessToRAM(process);
-        System.out.print("c");
-
+        addProcessToRAM(process.getProcessID());
     }
 
 
-    private void removeProcessFromRAM() {
+    private void removeProcessFromRAM(Process process) {
         int numberOfProcessesPresent = present_process_list.size();
         int numberOfFramesPerProcess = numberOfFrames/numberOfProcessesPresent;
-        List<Frame> old_list_frames = ram.getList_frames();
 
-        for (int i = 0; i<numberOfProcessesPresent; i++){
-            for (int j=0; j<numberOfFramesPerProcess; j++){
-                ram.getList_frames().get(i*numberOfFramesPerProcess + j)
-                        .setPid(present_process_list.get(i).getProcessID());
-                ram.getList_frames().get(i*numberOfFramesPerProcess + j)
-                        .setPagenummer(old_list_frames.get(i*numberOfFramesPerProcess + j).getPagenummer());
+        List<Frame> nogVerdelenFrames = new ArrayList<>();
+        for (int i=0; i<numberOfFrames; i++){
+            Frame f = ram.getList_frames().get(i);
+            if (f.getPid() == process.getProcessID()){
+                System.out.println(process);
+                System.out.println("frame: " + f);
+                nogVerdelenFrames.add(f);
             }
         }
+        verdeelFrames(nogVerdelenFrames, numberOfFramesPerProcess);
         System.out.println("\nRam herverdeeld: " + ram);
         System.out.println("numberOfProcessesPresent: " + numberOfProcessesPresent);
         System.out.println("numberOfFramesPerProcess: " + numberOfFramesPerProcess);
     }
 
-    private void addProcessToRAM(Process process) {
-        int numberOfProcessesPresent = present_process_list.size();
-        int numberOfFramesPerProcess = numberOfFrames/numberOfProcessesPresent;
-
-        if(numberOfProcessesPresent == 1){
-            for(int i=0; i<numberOfFramesPerProcess; i++){
-                ram.getList_frames().get(i).setPid(present_process_list.get(0).getProcessID());
-                ram.getList_frames().get(i).setPagenummer(i);
+    private void verdeelFrames(List<Frame> nogVerdelenFrames, int numberOfFramesPerProcess) {
+        int welkeFrameIndex = 0;
+        for (int i=0; i<present_process_list.size(); i++){
+            Process process = present_process_list.get(i);
+            while (aantalFramesProcess(process) < numberOfFramesPerProcess){
+                ram.getList_frames().get(nogVerdelenFrames.get(welkeFrameIndex).getFramenummer()).setPid(process.getProcessID());
+                ram.getList_frames().get(nogVerdelenFrames.get(welkeFrameIndex).getFramenummer()).setPagenummer(-1);
             }
         }
+    }
+
+    private int aantalFramesProcess(Process process) {
+        int aantalFrames = 0;
+        for (int i=0; i<numberOfFrames; i++){
+            if (ram.getList_frames().get(i).getPid() == process.getProcessID())
+                aantalFrames++;
+        }
+        return aantalFrames;
+    }
+
+
+    private void addProcessToRAM(int processID) {
+        Process process = null;
+        for (Process p: process_list){
+            if (p.getProcessID() == processID)
+                process = p;
+        }
+        int aantalFramesVerwijderenVanHuidigeProcesses = checkHoeveelFramesPerProcessVerwijderen();
+        System.out.println("\n# Frames per process verwijderen: " + aantalFramesVerwijderenVanHuidigeProcesses);
+
+        List<Frame> verwijderdeFrames = new ArrayList<>();
+        List<Frame> huidigeFramesPerProcess = null;
+        for (Process p : present_process_list){
+            huidigeFramesPerProcess = findAllFramesPerProcess(p);
+            System.out.println("huidigeFramesPerProcess: " + huidigeFramesPerProcess);
+            findLRUFrame(verwijderdeFrames, huidigeFramesPerProcess, aantalFramesVerwijderenVanHuidigeProcesses);
+            System.out.println("verwijderdeFrames: " + verwijderdeFrames);
+        }
+        for (Frame f : verwijderdeFrames){
+            f.setPid(processID);
+            f.setPagenummer(-1);
+        }
+        if (huidigeFramesPerProcess == null || huidigeFramesPerProcess.size() == 0){
+            for (Frame f : ram.getList_frames()){
+                f.setPid(processID);
+                f.setPagenummer(-1);
+            }
+        }
+
+        present_process_list.add(process);
         System.out.println("\nRam herverdeeld: " + ram);
+
+    }
+
+    private List<Frame> findLRUFrame(List<Frame> verwijderdeFrames, List<Frame> huidigeFramesPerProcess, int aantalNogVerwijderen) {
+        for (int i=0; i<aantalNogVerwijderen; i++){
+            Frame LRUFrame = null;
+            int LRUwaarde = -1;
+            for (Frame f : huidigeFramesPerProcess){
+                if (getLRU(f)>LRUwaarde){
+                    LRUFrame = f;
+                }
+            }
+            if (LRUFrame != null) {
+                verwijderdeFrames.add(LRUFrame);
+                huidigeFramesPerProcess.remove(LRUFrame);
+            }
+        }
+        return verwijderdeFrames;
+    }
+
+    private int getLRU(Frame f) {
+        int LATwaarde = -1;
+        for (Process p :process_list){
+            if (p.getProcessID() == f.getPid()){
+                if (findLAT(p, f.getPagenummer()) > LATwaarde){
+                    LATwaarde = findLAT(p, f.getPagenummer());
+                }
+            }
+        }
+        return LATwaarde;
+    }
+
+    private List<Frame> findAllFramesPerProcess(Process p) {
+        List<Frame> huidigeFramesPerProcess = new ArrayList<>();
+        for (Frame f : ram.getList_frames()){
+            if (f.getPid() == p.getProcessID()){
+                huidigeFramesPerProcess.add(f);
+            }
+        }
+        return huidigeFramesPerProcess;
+    }
+
+    private int checkHoeveelFramesPerProcessVerwijderen() {
+        int numberOfProcessesPresent = present_process_list.size();
+        if (numberOfProcessesPresent == 0){
+            return 0;
+        }
+        else if (numberOfProcessesPresent == 1){
+            return numberOfFrames/2;
+        }
+        else if(numberOfProcessesPresent == 2){
+            return numberOfFrames/3;
+        }
+        else if(numberOfProcessesPresent == 3){
+            return numberOfFrames/4;
+        }
+//        else if(numberOfProcessesPresent == 4){
+//            return numberOfFrames/4;                  //in wachtrij zetten
+//        }
         System.out.println("numberOfProcessesPresent: " + numberOfProcessesPresent);
-        System.out.println("numberOfFramesPerProcess: " + numberOfFramesPerProcess);
+        return 0;
+    }
+
+    private void removeFramesFromCurrentProcesses(int numberOfFramesPerProcess) {
+        for (Process p :present_process_list){
+            if (aantalFramesProcess(p) > numberOfFramesPerProcess){
+                removeFrameFromeProcess(aantalFramesProcess(p)-numberOfFramesPerProcess, p);
+            }
+        }
+    }
+
+    private void removeFrameFromeProcess(int aantalDatVerwijderdMoetWorden, Process p) {
+        Frame frameWordtVerwijderd = null;
+        int LastAccessedTime = -1;
+        for (int j=0; j<present_process_list.size(); j++){
+            for (int k=0; k<aantalDatVerwijderdMoetWorden; k++){
+                for (int i=0; i<numberOfFrames; i++){
+                    Frame f = ram.getList_frames().get(i);
+                    if (f.getPid() == p.getProcessID()){
+                        if (LastAccessedTime < findLAT(p, f.getPagenummer()) ){
+                            LastAccessedTime = findLAT(p, f.getPagenummer());
+                            frameWordtVerwijderd = f;
+                        }
+                    }
+                }
+                if (frameWordtVerwijderd != null){
+                    frameWordtVerwijderd.setPid(-1);
+                    frameWordtVerwijderd.setPagenummer(-1);
+                    frameWordtVerwijderd = null;
+                }
+            }
+        }
+    }
+
+    private int findLAT(Process p, int pagenummer) {
+        if (pagenummer != 0)
+            return p.getPageTable().getList_pages().get(pagenummer).getLastAccessTime();
+        else
+            return -1;
     }
 
     private Page leastRecentlyUsed() {
@@ -405,11 +541,13 @@ public class App {
                     p = present_process_list.get(i);
                 }
             }
-            // kleinste acces time zoeken
-            for (Page page : p.getPageTable().getList_pages()) {
-                if (page.getLastAccessTime() < min) {
-                    min = page.getLastAccessTime();
-                    lru = page;
+            if (p != null){
+                // kleinste acces time zoeken
+                for (Page page : p.getPageTable().getList_pages()) {
+                    if (page.getLastAccessTime() < min) {
+                        min = page.getLastAccessTime();
+                        lru = page;
+                    }
                 }
             }
         }
@@ -424,15 +562,16 @@ public class App {
             lru.setCorrespondingFrameNumber(-1);
             amountOfWrites++;
         }
-        ram.getList_frames().get(lru.getCorrespondingFrameNumber()).setPid(-1);
-        ram.getList_frames().get(lru.getCorrespondingFrameNumber()).setPagenummer(-1);
-
+        if (lru.getCorrespondingFrameNumber() != -1) {
+            ram.getList_frames().get(lru.getCorrespondingFrameNumber()).setPid(-1);
+            ram.getList_frames().get(lru.getCorrespondingFrameNumber()).setPagenummer(-1);
+        }
         return frameNumberWithChange;
     }
 
     private void addPageToRAM(Page newPage, int numberOfFrame, Instruction instruction) {
 
-        for (int i=0; i<ram.getList_frames().size(); i++) {
+        for (int i=0; i<numberOfFrames; i++) {
             if (numberOfFrame == ram.getList_frames().get(i).getFramenummer()) {
                 ram.getList_frames().get(i).setPid(instruction.getProcessID());
                 ram.getList_frames().get(i).setPagenummer(instruction.getAddress()/4096);
@@ -442,6 +581,167 @@ public class App {
             }
         }
     }
+
+
+    private void changeGUIValuesOneProcess(Instruction instruction) {
+        TimerValue.setText(String.valueOf(timer));
+
+        InstrPIDValue.setText(String.valueOf(instruction.getProcessID()));
+        InstrOpValue.setText(String.valueOf(instruction.getOperation()));
+        InstrAddrValue.setText(String.valueOf(instruction.getAddress()));
+
+        AddrVirtValue.setText(String.valueOf(instruction.getAddress()));
+        AddrRealValue.setText(String.valueOf(instruction.getAddress()));
+
+        changeGUIRAM();
+        changeGUIPT(instruction);
+    }
+    private void changeGUIPT(Instruction instruction) {
+        Process process = null;
+        for (Process p: process_list){
+            if (p.getProcessID() == instruction.getProcessID()){
+                process = p;
+            }
+        }
+        assert process != null;
+        PN0_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(0).getPresentBit()));
+        PN0_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(0).getModifyBit()));
+        PN0_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(0).getLastAccessTime()));
+        PN0_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(0).getCorrespondingFrameNumber()));
+
+        PN1_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(1).getPresentBit()));
+        PN1_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(1).getModifyBit()));
+        PN1_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(1).getLastAccessTime()));
+        PN1_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(1).getCorrespondingFrameNumber()));
+
+        PN2_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(2).getPresentBit()));
+        PN2_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(2).getModifyBit()));
+        PN2_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(2).getLastAccessTime()));
+        PN2_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(2).getCorrespondingFrameNumber()));
+
+        PN3_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(3).getPresentBit()));
+        PN3_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(3).getModifyBit()));
+        PN3_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(3).getLastAccessTime()));
+        PN3_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(3).getCorrespondingFrameNumber()));
+
+        PN4_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(4).getPresentBit()));
+        PN4_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(4).getModifyBit()));
+        PN4_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(4).getLastAccessTime()));
+        PN4_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(4).getCorrespondingFrameNumber()));
+
+        PN5_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(5).getPresentBit()));
+        PN5_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(5).getModifyBit()));
+        PN5_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(5).getLastAccessTime()));
+        PN5_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(5).getCorrespondingFrameNumber()));
+
+        PN6_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(6).getPresentBit()));
+        PN6_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(6).getModifyBit()));
+        PN6_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(6).getLastAccessTime()));
+        PN6_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(6).getCorrespondingFrameNumber()));
+
+        PN7_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(7).getPresentBit()));
+        PN7_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(7).getModifyBit()));
+        PN7_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(7).getLastAccessTime()));
+        PN7_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(7).getCorrespondingFrameNumber()));
+
+        PN8_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(8).getPresentBit()));
+        PN8_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(8).getModifyBit()));
+        PN8_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(8).getLastAccessTime()));
+        PN8_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(8).getCorrespondingFrameNumber()));
+
+        PN9_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(9).getPresentBit()));
+        PN9_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(9).getModifyBit()));
+        PN9_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(9).getLastAccessTime()));
+        PN9_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(9).getCorrespondingFrameNumber()));
+
+        PN10_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(10).getPresentBit()));
+        PN10_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(10).getModifyBit()));
+        PN10_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(10).getLastAccessTime()));
+        PN10_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(10).getCorrespondingFrameNumber()));
+
+        PN11_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(11).getPresentBit()));
+        PN11_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(11).getModifyBit()));
+        PN11_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(11).getLastAccessTime()));
+        PN11_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(11).getCorrespondingFrameNumber()));
+
+        PN12_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(12).getPresentBit()));
+        PN12_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(12).getModifyBit()));
+        PN12_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(12).getLastAccessTime()));
+        PN12_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(12).getCorrespondingFrameNumber()));
+
+        PN13_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(13).getPresentBit()));
+        PN13_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(13).getModifyBit()));
+        PN13_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(13).getLastAccessTime()));
+        PN13_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(13).getCorrespondingFrameNumber()));
+
+        PN14_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(14).getPresentBit()));
+        PN14_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(14).getModifyBit()));
+        PN14_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(14).getLastAccessTime()));
+        PN14_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(14).getCorrespondingFrameNumber()));
+
+        PN15_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(15).getPresentBit()));
+        PN15_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(15).getModifyBit()));
+        PN15_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(15).getLastAccessTime()));
+        PN15_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(15).getCorrespondingFrameNumber()));
+
+    }
+    private void changeGUIRAM() {
+        for(int i=0; i<numberOfFrames; i++){
+            setFrameInGUIRAM(ram.getList_frames().get(i));
+        }
+    }
+    private void setFrameInGUIRAM(Frame f) {
+        switch (f.getFramenummer()){
+            case 0: {
+                FN0_PID.setText(String.valueOf(f.getPid()));
+                FN0_PN.setText(String.valueOf(f.getPagenummer()));
+            }
+            case 1: {
+                FN1_PID.setText(String.valueOf(f.getPid()));
+                FN1_PN.setText(String.valueOf(f.getPagenummer()));
+            }
+            case 2: {
+                FN2_PID.setText(String.valueOf(f.getPid()));
+                FN2_PN.setText(String.valueOf(f.getPagenummer()));
+            }
+            case 3: {
+                FN3_PID.setText(String.valueOf(f.getPid()));
+                FN3_PN.setText(String.valueOf(f.getPagenummer()));
+            }
+            case 4: {
+                FN4_PID.setText(String.valueOf(f.getPid()));
+                FN4_PN.setText(String.valueOf(f.getPagenummer()));
+            }
+            case 5: {
+                FN5_PID.setText(String.valueOf(f.getPid()));
+                FN5_PN.setText(String.valueOf(f.getPagenummer()));
+            }
+            case 6: {
+                FN6_PID.setText(String.valueOf(f.getPid()));
+                FN6_PN.setText(String.valueOf(f.getPagenummer()));
+            }
+            case 7: {
+                FN7_PID.setText(String.valueOf(f.getPid()));
+                FN7_PN.setText(String.valueOf(f.getPagenummer()));
+            }
+            case 8: {
+                FN8_PID.setText(String.valueOf(f.getPid()));
+                FN8_PN.setText(String.valueOf(f.getPagenummer()));
+            }case 9: {
+                FN9_PID.setText(String.valueOf(f.getPid()));
+                FN9_PN.setText(String.valueOf(f.getPagenummer()));
+            }case 10: {
+                FN10_PID.setText(String.valueOf(f.getPid()));
+                FN10_PN.setText(String.valueOf(f.getPagenummer()));
+            }
+            case 11: {
+                FN11_PID.setText(String.valueOf(f.getPid()));
+                FN11_PN.setText(String.valueOf(f.getPagenummer()));
+            }
+            default: break;
+        }
+    }
+
 
     public App() {
 //        oneProcess.addActionListener(e -> {

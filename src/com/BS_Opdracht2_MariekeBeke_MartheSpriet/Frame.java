@@ -13,12 +13,6 @@ public class Frame {
         this.pagenummer = -1;
         this.framenummer = i;
     }
-    public Frame(int pid, int pagenummer, int framenummer) {
-        this.pid = pid;
-        this.pagenummer = pagenummer;
-        this.framenummer = framenummer;
-    }
-
     public Frame() {
     }
 

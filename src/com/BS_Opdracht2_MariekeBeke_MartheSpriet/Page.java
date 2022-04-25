@@ -38,6 +38,7 @@ public class Page {
                 ", modifyBit=" + modifyBit +
                 ", lastAccessTime=" + lastAccessTime +
                 ", correspondingFrameNumber=" + correspondingFrameNumber +
+                "\n" +
                 '}';
     }
     public int getPageNumber() {
