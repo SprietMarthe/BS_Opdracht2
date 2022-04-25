@@ -40,6 +40,7 @@ public class App {
     static RAM ram;
     static final int numberOfFrames=12;
     static final int numberOfPages=16;
+    static int amountOfWrites;
 
     public static void main(String[] argv) {
         Scanner sc = new Scanner(System.in);
@@ -142,9 +143,35 @@ public class App {
     }
 
     private void operationWrite(Instruction instruction) {
+        timer++;
     }
 
     private void operationRead(Instruction instruction) {
+        boolean processIsInRAM = false;
+        for (int i=0; i<present_process_list.size(); i++) {
+            if (instruction.getProcessID() == present_process_list.get(i).getProcessID()) processIsInRAM=true;
+        }
+
+        if (!processIsInRAM) {
+            addProcessToRAM();      // gebruik hier methode die jij gemaakt heb, ben niet zeker of mijn gebruik juist is
+        }
+        else {
+            boolean pageIsInRAM = false;
+            for (Frame f : ram.getList_frames()) {
+                if ((f.getPid() == instruction.getProcessID() && (f.getPagenummer() == instruction.getAddress() / 4096)))
+                    pageIsInRAM = true;
+            }
+            if (!pageIsInRAM) {
+                // schrijf lru uit ram als modify bit = 1
+                Page lru = leastRecentlyUsed();
+                removePageFromRAM(lru);
+                // anders gewoon verwijderen
+            }
+        }
+
+        // recently used variabele aanpassen
+
+        timer++;
     }
 
     private void operationStart(Instruction instruction) {
@@ -202,7 +229,37 @@ public class App {
         System.out.println("numberOfFramesPerProcess: " + numberOfFramesPerProcess);
     }
 
+    private Page leastRecentlyUsed() {
+        int min = timer;
+        Process p = new Process();
+        for (Frame f: ram.getList_frames()) {
+            // process vinden om aan de pagetable te kunnen
+            for (int i=0; i<present_process_list.size(); i++) {
+                if (present_process_list.get(i).getProcessID() == f.getPid()) {
+                    p = present_process_list.get(i);
+                }
+            }
 
+            for (Page page : p.getPageTable().getList_pages()) {
+                if (page.getLastAccessTime() < min) min = page.getLastAccessTime();
+            }
+
+
+        }
+        Page tijdelijk = new Page();
+        return tijdelijk;
+    }
+
+    private void removePageFromRAM(Page lru) {
+        if (lru.getModifyBit() == 1) {
+            lru.setPresentBit(0);
+            lru.setModifyBit(0);
+            lru.setCorrespondingFrameNumber(-1);
+            amountOfWrites++;
+        }
+        ram.getList_frames().get(lru.getCorrespondingFrameNumber()).setPid(-1);
+        ram.getList_frames().get(lru.getCorrespondingFrameNumber()).setPagenummer(-1);
+    }
 
 
     public App() {
