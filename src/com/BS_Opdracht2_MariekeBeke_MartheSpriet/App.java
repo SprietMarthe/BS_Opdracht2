@@ -9,6 +9,8 @@ import javax.swing.*;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.*;
 import java.util.List;
@@ -248,6 +250,7 @@ public class App {
         assert instruction != null;
         if (instruction.getOperation() == OperationProcess.Start){
             operationStart(instruction);
+            System.out.println(present_process_list);
         }
         else if (instruction.getOperation() == OperationProcess.Read){
             operationRead(instruction);
@@ -272,7 +275,7 @@ public class App {
         }
         process_list.remove(process);
         present_process_list.remove(process);
-        System.out.print("Process verwijderd: " + process);
+        System.out.print("Process verwijderd: " + process.getProcessID());
         removeProcessFromRAM(process);
     }
 
@@ -367,38 +370,15 @@ public class App {
         for (int i=0; i<numberOfFrames; i++){
             Frame f = ram.getList_frames().get(i);
             if (f.getPid() == process.getProcessID()){
-                System.out.println(process);
-                System.out.println("frame: " + f);
+                System.out.println("process: " + process.getProcessID());
+                System.out.println("frame: " + f.getFramenummer());
                 nogVerdelenFrames.add(f);
             }
         }
         verdeelFrames(nogVerdelenFrames, numberOfFramesPerProcess);
-        System.out.println("\nRam herverdeeld: " + ram);
         System.out.println("numberOfProcessesPresent: " + numberOfProcessesPresent);
         System.out.println("numberOfFramesPerProcess: " + numberOfFramesPerProcess);
     }
-
-    private void verdeelFrames(List<Frame> nogVerdelenFrames, int numberOfFramesPerProcess) {
-        int welkeFrameIndex = 0;
-        for (int i=0; i<present_process_list.size(); i++){
-            Process process = present_process_list.get(i);
-            while (aantalFramesProcess(process) < numberOfFramesPerProcess){
-                ram.getList_frames().get(nogVerdelenFrames.get(welkeFrameIndex).getFramenummer()).setPid(process.getProcessID());
-                ram.getList_frames().get(nogVerdelenFrames.get(welkeFrameIndex).getFramenummer()).setPagenummer(-1);
-            }
-        }
-    }
-
-    private int aantalFramesProcess(Process process) {
-        int aantalFrames = 0;
-        for (int i=0; i<numberOfFrames; i++){
-            if (ram.getList_frames().get(i).getPid() == process.getProcessID())
-                aantalFrames++;
-        }
-        return aantalFrames;
-    }
-
-
     private void addProcessToRAM(int processID) {
         Process process = null;
         for (Process p: process_list){
@@ -419,19 +399,36 @@ public class App {
         for (Frame f : verwijderdeFrames){
             f.setPid(processID);
             f.setPagenummer(-1);
+            removeFramesFromCurrentProcesses(f);
         }
-        if (huidigeFramesPerProcess == null || huidigeFramesPerProcess.size() == 0){
+        if (huidigeFramesPerProcess == null){
             for (Frame f : ram.getList_frames()){
                 f.setPid(processID);
                 f.setPagenummer(-1);
             }
         }
-
         present_process_list.add(process);
         System.out.println("\nRam herverdeeld: " + ram);
-
     }
 
+    private void verdeelFrames(List<Frame> nogVerdelenFrames, int numberOfFramesPerProcess) {
+        int welkeFrameIndex = 0;
+        for (int i=0; i<present_process_list.size(); i++){
+            Process process = present_process_list.get(i);
+            while (aantalFramesProcess(process) < numberOfFramesPerProcess){
+                ram.getList_frames().get(nogVerdelenFrames.get(welkeFrameIndex).getFramenummer()).setPid(process.getProcessID());
+                ram.getList_frames().get(nogVerdelenFrames.get(welkeFrameIndex).getFramenummer()).setPagenummer(-1);
+            }
+        }
+    }
+    private int aantalFramesProcess(Process process) {
+        int aantalFrames = 0;
+        for (int i=0; i<numberOfFrames; i++){
+            if (ram.getList_frames().get(i).getPid() == process.getProcessID())
+                aantalFrames++;
+        }
+        return aantalFrames;
+    }
     private List<Frame> findLRUFrame(List<Frame> verwijderdeFrames, List<Frame> huidigeFramesPerProcess, int aantalNogVerwijderen) {
         for (int i=0; i<aantalNogVerwijderen; i++){
             Frame LRUFrame = null;
@@ -456,7 +453,6 @@ public class App {
         }
         return verwijderdeFrames;
     }
-
     private int getLRU(Frame f) {
         int LATwaarde = -1;
         for (Process p :process_list){
@@ -468,7 +464,6 @@ public class App {
         }
         return LATwaarde;
     }
-
     private List<Frame> findAllFramesPerProcess(Process p) {
         List<Frame> huidigeFramesPerProcess = new ArrayList<>();
         for (Frame f : ram.getList_frames()){
@@ -478,7 +473,6 @@ public class App {
         }
         return huidigeFramesPerProcess;
     }
-
     private int checkHoeveelFramesPerProcessVerwijderen() {
         int numberOfProcessesPresent = present_process_list.size();
         if (numberOfProcessesPresent == 0){
@@ -499,44 +493,27 @@ public class App {
         System.out.println("numberOfProcessesPresent: " + numberOfProcessesPresent);
         return 0;
     }
-
-    private void removeFramesFromCurrentProcesses(int numberOfFramesPerProcess) {
+    private void removeFramesFromCurrentProcesses(Frame frameVerwijderd) {
         for (Process p :present_process_list){
-            if (aantalFramesProcess(p) > numberOfFramesPerProcess){
-                removeFrameFromeProcess(aantalFramesProcess(p)-numberOfFramesPerProcess, p);
-            }
-        }
-    }
-
-    private void removeFrameFromeProcess(int aantalDatVerwijderdMoetWorden, Process p) {
-        Frame frameWordtVerwijderd = null;
-        int LastAccessedTime = -1;
-        for (int j=0; j<present_process_list.size(); j++){
-            for (int k=0; k<aantalDatVerwijderdMoetWorden; k++){
-                for (int i=0; i<numberOfFrames; i++){
-                    Frame f = ram.getList_frames().get(i);
-                    if (f.getPid() == p.getProcessID()){
-                        if (LastAccessedTime < findLAT(p, f.getPagenummer()) ){
-                            LastAccessedTime = findLAT(p, f.getPagenummer());
-                            frameWordtVerwijderd = f;
-                        }
+            if (p.getProcessID() == frameVerwijderd.getPid()){
+                for (Page page : p.getPageTable().getList_pages()){
+                    if (frameVerwijderd.getPagenummer() == page.getPageNumber()){
+                        page.setPresentBit(0);
+                        page.setLastAccessTime(timer);
+                        page.setCorrespondingFrameNumber(-1);
                     }
                 }
-                if (frameWordtVerwijderd != null){
-                    frameWordtVerwijderd.setPid(-1);
-                    frameWordtVerwijderd.setPagenummer(-1);
-                    frameWordtVerwijderd = null;
-                }
             }
         }
     }
-
     private int findLAT(Process p, int pagenummer) {
         if (pagenummer != -1)
             return p.getPageTable().getList_pages().get(pagenummer).getLastAccessTime();
         else
             return -1;
     }
+
+
 
     private Page leastRecentlyUsed() {
         int min = timer;
@@ -833,28 +810,18 @@ public class App {
 
 
     public App() {
-//        oneProcess.addActionListener(e -> {
-//            if (!instructions.isEmpty()){
-//                executeOneInstruction();
-//            }
-//            else
-//                System.out.println("All instructions are executed!");
-//
-////            //JOptionPane.showMessageDialog(null, "Hello world");
-////            TimerValue.setText(String.valueOf(timer));              // voorbeeld
-////            TimerValue.setVisible(true);
-//        });
-//        allProcesses.addActionListener(e -> {
-//            while(!instructions.isEmpty()){
-//                executeOneInstruction();
-//            }
-//        });
         executeOneProcessButton.addActionListener(e -> {
             if (!instructions.isEmpty()){
                 executeOneInstruction();
             }
             else
                 System.out.println("All instructions are executed!");
+        });
+        executeAllProcessesButton.addActionListener(e -> {
+            while (!instructions.isEmpty()) {
+                executeOneInstruction();
+            }
+            System.out.println("All instructions are executed!");
         });
     }
 }

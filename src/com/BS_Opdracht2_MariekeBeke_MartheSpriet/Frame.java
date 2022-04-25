@@ -21,8 +21,6 @@ public class Frame {
     public String toString() {
         return "Frame{" +
                 "framenummer=" + framenummer +
-                ", pid=" + pid +
-                ", pagenummer=" + pagenummer +
                 '}';
     }
     public int getPid() {

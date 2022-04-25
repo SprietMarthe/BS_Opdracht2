@@ -23,9 +23,7 @@ public class Process {
     @Override
     public String toString() {
         return "Process{" +
-                "processID=" + processID +
-                ", pageTable=" + pageTable +
-                ", numberOfWrites=" + numberOfWrites +
+                "PID=" + processID +
                 '}';
     }
     public int getProcessID() {
