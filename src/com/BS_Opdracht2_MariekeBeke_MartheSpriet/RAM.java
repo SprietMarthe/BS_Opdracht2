@@ -6,21 +6,16 @@ import java.util.List;
 public class RAM {
     private List<Frame> list_frames;
 
-
-
     public RAM(int numberOfFrames) {
         this.list_frames = new ArrayList<>();
         for (int i = 0; i<numberOfFrames; i++){
             list_frames.add(new Frame(i));
         }
     }
+
     public RAM(List<Frame> list_frames) {
         this.list_frames = list_frames;
     }
-
-
-
-
 
     @Override
     public String toString() {

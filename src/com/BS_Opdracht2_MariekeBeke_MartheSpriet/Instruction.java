@@ -5,16 +5,11 @@ public class Instruction {
     private OperationProcess operation;
     private int address;
 
-
-
     public Instruction(int processID, String operation, int address) {
         this.processID = processID;
         this.operation = OperationProcess.valueOf(operation);
         this.address = address;
     }
-
-
-
 
     @Override
     public String toString() {

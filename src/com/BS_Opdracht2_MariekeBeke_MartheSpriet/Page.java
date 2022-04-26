@@ -7,9 +7,6 @@ public class Page {
     private int lastAccessTime;
     private int correspondingFrameNumber;        //[0,11]
 
-
-
-
     public Page(int timer, int i) {
         this.pageNumber = i;
         this.presentBit = 0;
@@ -17,6 +14,7 @@ public class Page {
         this.lastAccessTime = timer;
         this.correspondingFrameNumber = -1;
     }
+
     public Page(int pageNumber, int presentBit, int modifyBit, int lastAccessTime, int correspondingFrameNumber) {
         this.pageNumber = pageNumber;
         this.presentBit = presentBit;
@@ -24,11 +22,6 @@ public class Page {
         this.lastAccessTime = lastAccessTime;
         this.correspondingFrameNumber = correspondingFrameNumber;
     }
-
-    public Page() {
-
-    }
-
 
     @Override
     public String toString() {
@@ -41,6 +34,7 @@ public class Page {
                 "\n" +
                 '}';
     }
+
     public int getPageNumber() {
         return pageNumber;
     }

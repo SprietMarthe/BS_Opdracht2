@@ -5,20 +5,11 @@ public class Process {
     private PageTable pageTable;
     private int numberOfWrites;
 
-
-    public Process() {
-    }
-
-
-
     public Process(int processID, PageTable pageTable, int numberOfWrites) {
         this.processID = processID;
         this.pageTable = pageTable;
         this.numberOfWrites = numberOfWrites;
     }
-
-
-
 
     @Override
     public String toString() {

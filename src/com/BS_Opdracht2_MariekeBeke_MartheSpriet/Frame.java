@@ -5,17 +5,11 @@ public class Frame {
     private int pid;
     private int pagenummer;
 
-
-
-
     public Frame(int i) {
         this.pid = -1;
         this.pagenummer = -1;
         this.framenummer = i;
     }
-    public Frame() {
-    }
-
 
     @Override
     public String toString() {

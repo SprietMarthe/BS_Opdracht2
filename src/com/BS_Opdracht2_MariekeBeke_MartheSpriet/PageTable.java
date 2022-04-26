@@ -6,9 +6,6 @@ import java.util.List;
 public class PageTable {
     private List<Page> list_pages;      //[0,16]
 
-
-
-
     public PageTable(List<Page> list_pages) {
         this.list_pages = list_pages;
     }
@@ -19,8 +16,6 @@ public class PageTable {
         }
     }
 
-
-
     @Override
     public String toString() {
         return "PageTable{" +
@@ -30,6 +25,7 @@ public class PageTable {
     public List<Page> getList_pages() {
         return list_pages;
     }
+
     public void setList_pages(List<Page> list_pages) {
         this.list_pages = list_pages;
     }

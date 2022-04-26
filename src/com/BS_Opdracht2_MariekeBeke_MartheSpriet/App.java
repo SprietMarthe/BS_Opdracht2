@@ -15,6 +15,8 @@ import java.io.File;
 import java.util.*;
 import java.util.List;
 
+import static java.lang.Math.floor;
+
 public class App {
     private JPanel panelMain;
     private JButton executeOneProcessButton;
@@ -175,11 +177,6 @@ public class App {
         sc.close();
     }
 
-
-
-
-
-
     private static void initialiseren() {
         present_process_list = new ArrayList<>();
         process_list = new ArrayList<>();
@@ -187,6 +184,7 @@ public class App {
         instructions = new LinkedList<>();
         ram = new RAM(numberOfFrames);
     }
+
     private static void displayJFrame() {
 //        JFrame frame= new JFrame("App");
 //        frame.setContentPane(new App().panelMain);
@@ -206,6 +204,7 @@ public class App {
         frame.getContentPane().getComponent(1).setBackground(Color.gray);
 
     }
+
     public static void readingWholeXMLFile(){
         File file = null;
         try {
@@ -276,8 +275,50 @@ public class App {
         System.out.print("Process verwijderd: " + process.getProcessID());
         removeProcessFromRAM(process);
     }
+
     private void operationWrite(Instruction instruction) {
-        // controle of process al in de RAM zit
+        // VARIABLES BELONGING TO INSTRUCTION
+        // Current process id
+        int pID = instruction.getProcessID();
+        // Current virtual adress
+        int vAdress = instruction.getAddress();
+        // Current process
+        Process process = null;
+        for (Process p: process_list) {
+            if (p.getProcessID() == pID) process = p;
+        }
+        // Current page number
+        int pageNumber = (int) floor(vAdress/4096);
+        // Current Page
+        Page page = null;
+        for (Page p: process.getPageTable().getList_pages()) {
+            if (p.getPageNumber() == pageNumber) page = p;
+        }
+        // Current Offset
+        int offset = vAdress-pageNumber*4096;
+
+        // MAKE SURE PAGE IS IN RAM
+        // Is current process in RAM?
+        boolean processInRAM = isProcessInRAM(pID);
+        if (!processInRAM) {
+            addProcessToRAM(pID);
+            // TODO: is er een controle op die 4 processen?
+            // ?TODO? hierin ook de pagetable initialiseren?
+        }
+        // Is current page in RAM?
+        boolean pageInRAM = isPageInRAM(pID, page);
+        if (!pageInRAM) {
+            addPageToRAM(pID, page);
+        }
+
+        // WRITE
+        page.setModifyBit(1);
+        page.setLastAccessTime(timer);
+
+        timer++;
+
+        // OLD
+        /*// controle of process al in de RAM zit
         boolean processIsInRAM = false;
         for (int i=0; i<present_process_list.size(); i++) {
             if (instruction.getProcessID() == present_process_list.get(i).getProcessID()) processIsInRAM=true;
@@ -309,10 +350,51 @@ public class App {
         newPage.setLastAccessTime(timer);
         newPage.setModifyBit(1);
 
-        timer++;
+        timer++;*/
     }
+
     private void operationRead(Instruction instruction) {
-        // controle of process al in de RAM zit
+        // VARIABLES BELONGING TO INSTRUCTION
+        // Current process id
+        int pID = instruction.getProcessID();
+        // Current virtual adress
+        int vAdress = instruction.getAddress();
+        // Current process
+        Process process = null;
+        for (Process p: process_list) {
+            if (p.getProcessID() == pID) process = p;
+        }
+        // Current page number
+        int pageNumber = (int) floor(vAdress/4096);
+        // Current Page
+        Page page = null;
+        for (Page p: process.getPageTable().getList_pages()) {
+            if (p.getPageNumber() == pageNumber) page = p;
+        }
+        // Current Offset
+        int offset = vAdress-pageNumber*4096;
+
+        // MAKE SURE PAGE IS IN RAM
+        // Is current process in RAM?
+        boolean processInRAM = isProcessInRAM(pID);
+        if (!processInRAM) {
+            addProcessToRAM(pID);
+            // TODO? waar is er een controle op die 4 processen?
+            // ?TODO? hierin ook de pagetable initialiseren?
+        }
+        // Is current page in RAM?
+        boolean pageInRAM = isPageInRAM(pID, page);
+        if (!pageInRAM) {
+            addPageToRAM(pID, page);
+        }
+
+        // READ
+        page.setLastAccessTime(timer);
+
+        timer++;
+
+        // OLD
+        /*// controle of process al in de RAM zit
         boolean processIsInRAM = false;
         for (int i=0; i<present_process_list.size(); i++) {
             if (instruction.getProcessID() == present_process_list.get(i).getProcessID()) processIsInRAM=true;
@@ -343,8 +425,9 @@ public class App {
         }
         newPage.setLastAccessTime(timer);
 
-        timer++;
+        timer++;*/
     }
+
     private void operationStart(Instruction instruction) {
         Process process = new Process(
                 instruction.getProcessID(),
@@ -544,7 +627,26 @@ public class App {
     }
 
 
+    private boolean isProcessInRAM(int processID) {
+        boolean inRAM = false;
+        for (Process p: present_process_list) {
+            if (p.getProcessID() == processID) inRAM = true;
+        }
+        return inRAM;
+    }
 
+    private boolean isPageInRAM(int processID, Page page) {
+        boolean inRAM = false;
+        for (Process p: present_process_list) {
+            for (Page page1: p.getPageTable().getList_pages()) {
+                if (page1.getCorrespondingFrameNumber() != -1) inRAM = true;
+            }
+        }
+        return inRAM;
+    }
+
+    // TODO: opnieuw schrijven
+/*
     private Page leastRecentlyUsed() {
         int min = timer;
         Page lru = new Page();
@@ -568,7 +670,9 @@ public class App {
         }
         return lru;
     }
-
+*/
+    // TODO: opnieuw schrijven
+/*
     private int removePageFromRAM(Page lru) {
         int frameNumberWithChange = lru.getCorrespondingFrameNumber();
         if (lru.getModifyBit() == 1) {
@@ -583,20 +687,29 @@ public class App {
         }
         return frameNumberWithChange;
     }
+*/
 
-    private void addPageToRAM(Page newPage, int numberOfFrame, Instruction instruction) {
-
-        for (int i=0; i<numberOfFrames; i++) {
-            if (numberOfFrame == ram.getList_frames().get(i).getFramenummer()) {
-                ram.getList_frames().get(i).setPid(instruction.getProcessID());
-                ram.getList_frames().get(i).setPagenummer(instruction.getAddress()/4096);
-                newPage.setPageNumber(instruction.getAddress()/44096);
-                newPage.setCorrespondingFrameNumber(numberOfFrame);
-                newPage.setPresentBit(1);
+    private void addPageToRAM(int processID, Page page) {
+        // Look for empty frame
+        int frameNumber = -1;
+        boolean found = false;
+        for (Frame f: ram.getList_frames()) {
+            if (f.getPid() == processID || f.getPagenummer() == -1) {
+                found = true;
+                frameNumber = f.getFramenummer();
             }
         }
-    }
 
+        // if not found iets wegdoen
+
+        // Connect page to frame
+        page.setPresentBit(1);
+        page.setLastAccessTime(timer);
+        page.setCorrespondingFrameNumber(frameNumber);
+
+        ram.getList_frames().get(frameNumber).setPid(processID);
+        ram.getList_frames().get(frameNumber).setPagenummer(page.getPageNumber());
+    }
 
     private void changeGUIValuesOneProcess(Instruction instruction) {
         TimerValue.setText(String.valueOf(timer));
