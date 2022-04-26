@@ -9,8 +9,6 @@ import javax.swing.*;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.*;
 import java.util.List;
@@ -105,7 +103,6 @@ public class App {
     private JLabel AddrRealValue;
     private JLabel PageTableLabel;
     private JPanel PanelInfoAndRam;
-    private JPanel PTPanel;
     private JLabel RAMLabel;
     private JLabel FrameNumberLabel;
     private JLabel ProcessIDLabel;
@@ -152,8 +149,12 @@ public class App {
     private JPanel ButtonPanel;
     private JPanel AddressPanel;
     private JLabel TimerValue;
-    private JLabel TimerLabel;
+    private JLabel CurrentTimerLabel;
     private JPanel TimerPanel;
+    private JLabel TimeLabel;
+    private JLabel WritingLabel;
+    private JLabel NomberOfSwappesLabel;
+    private JLabel NumberOfSwappesValue;
     private JButton allProcesses;
     private JButton oneProcess;
 
@@ -201,7 +202,7 @@ public class App {
         frame.setSize(new Dimension(1200, 700));
         frame.getContentPane().setBackground(Color.white);
         frame.getContentPane().getComponent(0).setBackground(Color.gray);
-        frame.getContentPane().getComponent(1).setBackground(Color.gray);
+        frame.getContentPane().getComponent(2).setBackground(Color.gray);
 
     }
 
@@ -239,9 +240,6 @@ public class App {
         }
     }
 
-
-
-
     private void executeOneInstruction() {
         Instruction instruction = instructions.poll();
         System.out.print(instruction);
@@ -262,7 +260,6 @@ public class App {
         }
         changeGUIValuesOneProcess(instruction);
     }
-
 
 
     private void operationTerminate(Instruction instruction) {
@@ -441,24 +438,7 @@ public class App {
 
 
 
-
     private void removeProcessFromRAM(Process process) {
-//        int numberOfProcessesPresent = present_process_list.size();
-//        int numberOfFramesPerProcess = numberOfFrames/numberOfProcessesPresent;
-//
-//        List<Frame> nogVerdelenFrames = new ArrayList<>();
-//        for (int i=0; i<numberOfFrames; i++){
-//            Frame f = ram.getList_frames().get(i);
-//            if (f.getPid() == process.getProcessID()){
-//                System.out.println("process: " + process.getProcessID());
-//                System.out.println("frame: " + f.getFramenummer());
-//                nogVerdelenFrames.add(f);
-//            }
-//        }
-//        verdeelFrames(nogVerdelenFrames, numberOfFramesPerProcess);
-//        System.out.println("numberOfProcessesPresent: " + numberOfProcessesPresent);
-//        System.out.println("numberOfFramesPerProcess: " + numberOfFramesPerProcess);
-
         int aantalFramesToegevoegdAanAndereProcesses = checkHoeveelFramesPerProcessToevoegen();
         System.out.println("\n# Frames per process toegevoegd: " + aantalFramesToegevoegdAanAndereProcesses);
 
@@ -471,24 +451,34 @@ public class App {
             }
         }
         if (toegevoegdeFrames != null){
-            for (Process p : process_list){
-                if (p == process){
-                    List<Page> list_pages_verwijderdUitRam = p.getPageTable().getList_pages();
-                    for (Frame f : toegevoegdeFrames){
-                        if (f.getPagenummer() != -1) {
-                            list_pages_verwijderdUitRam.get(f.getPagenummer()).setPresentBit(0);
-                            list_pages_verwijderdUitRam.get(f.getPagenummer()).setLastAccessTime(timer);
-                            list_pages_verwijderdUitRam.get(f.getPagenummer()).setCorrespondingFrameNumber(-1);
+            if (toegevoegdeFrames.size() != 12){
+                for (Process p : process_list){
+                    if (p == process){
+                        List<Page> list_pages_verwijderdUitRam = p.getPageTable().getList_pages();
+                        for (Frame f : toegevoegdeFrames){
+                            if (f.getPagenummer() != -1) {
+                                list_pages_verwijderdUitRam.get(f.getPagenummer()).setPresentBit(0);
+                                list_pages_verwijderdUitRam.get(f.getPagenummer()).setLastAccessTime(timer);
+                                list_pages_verwijderdUitRam.get(f.getPagenummer()).setCorrespondingFrameNumber(-1);
+                            }
                         }
                     }
                 }
-            }
-            present_process_list.remove(process);
-            for (int j=0; j<present_process_list.size(); j++){
-                for (int i=0; i<aantalFramesToegevoegdAanAndereProcesses; i++){
-                    toegevoegdeFrames.get(i + j*aantalFramesToegevoegdAanAndereProcesses).setPid(present_process_list.get(j).getProcessID());
-                    toegevoegdeFrames.get(i + j*aantalFramesToegevoegdAanAndereProcesses).setPagenummer(-1);
+                present_process_list.remove(process);
+                for (int j=0; j<present_process_list.size(); j++){
+                    for (int i=0; i<aantalFramesToegevoegdAanAndereProcesses; i++){
+                        toegevoegdeFrames.get(i + j*aantalFramesToegevoegdAanAndereProcesses).setPid(present_process_list.get(j).getProcessID());
+                        toegevoegdeFrames.get(i + j*aantalFramesToegevoegdAanAndereProcesses).setPagenummer(-1);
+                    }
                 }
+            }
+            else{
+                System.out.println("Laatste process verwijderd");
+                for (Frame f : toegevoegdeFrames){
+                    f.setPid(-1);
+                    f.setPagenummer(-1);
+                }
+                System.out.println(ram.getList_frames());
             }
         }
     }
@@ -541,7 +531,6 @@ public class App {
         present_process_list.add(process);
         System.out.println("\nRam herverdeeld: " + ram);
     }
-
     private List<Frame> findLRUFrame(List<Frame> verwijderdeFrames, List<Frame> huidigeFramesPerProcess, int aantalNogVerwijderen) {
         for (int i=0; i<aantalNogVerwijderen; i++){
             Frame LRUFrame = null;
@@ -721,6 +710,8 @@ public class App {
         AddrVirtValue.setText(String.valueOf(instruction.getAddress()));
         AddrRealValue.setText(String.valueOf(instruction.getAddress()));
 
+        NumberOfSwappesValue.setText(String.valueOf(amountOfWrites));
+
         changeGUIRAM();
         changeGUIPT(instruction);
     }
@@ -735,163 +726,163 @@ public class App {
             PN0_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(0).getPresentBit()));
             PN0_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(0).getModifyBit()));
             PN0_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(0).getLastAccessTime()));
-            PN0_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(0).getCorrespondingFrameNumber()));
+            PN0_FN.setText(getStringValue(process.getPageTable().getList_pages().get(0).getCorrespondingFrameNumber()));
 
             PN1_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(1).getPresentBit()));
             PN1_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(1).getModifyBit()));
             PN1_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(1).getLastAccessTime()));
-            PN1_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(1).getCorrespondingFrameNumber()));
+            PN1_FN.setText(getStringValue(process.getPageTable().getList_pages().get(1).getCorrespondingFrameNumber()));
 
             PN2_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(2).getPresentBit()));
             PN2_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(2).getModifyBit()));
             PN2_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(2).getLastAccessTime()));
-            PN2_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(2).getCorrespondingFrameNumber()));
+            PN2_FN.setText(getStringValue(process.getPageTable().getList_pages().get(2).getCorrespondingFrameNumber()));
 
             PN3_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(3).getPresentBit()));
             PN3_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(3).getModifyBit()));
             PN3_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(3).getLastAccessTime()));
-            PN3_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(3).getCorrespondingFrameNumber()));
+            PN3_FN.setText(getStringValue(process.getPageTable().getList_pages().get(3).getCorrespondingFrameNumber()));
 
             PN4_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(4).getPresentBit()));
             PN4_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(4).getModifyBit()));
             PN4_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(4).getLastAccessTime()));
-            PN4_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(4).getCorrespondingFrameNumber()));
+            PN4_FN.setText(getStringValue(process.getPageTable().getList_pages().get(4).getCorrespondingFrameNumber()));
 
             PN5_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(5).getPresentBit()));
             PN5_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(5).getModifyBit()));
             PN5_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(5).getLastAccessTime()));
-            PN5_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(5).getCorrespondingFrameNumber()));
+            PN5_FN.setText(getStringValue(process.getPageTable().getList_pages().get(5).getCorrespondingFrameNumber()));
 
             PN6_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(6).getPresentBit()));
             PN6_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(6).getModifyBit()));
             PN6_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(6).getLastAccessTime()));
-            PN6_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(6).getCorrespondingFrameNumber()));
+            PN6_FN.setText(getStringValue(process.getPageTable().getList_pages().get(6).getCorrespondingFrameNumber()));
 
             PN7_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(7).getPresentBit()));
             PN7_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(7).getModifyBit()));
             PN7_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(7).getLastAccessTime()));
-            PN7_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(7).getCorrespondingFrameNumber()));
+            PN7_FN.setText(getStringValue(process.getPageTable().getList_pages().get(7).getCorrespondingFrameNumber()));
 
             PN8_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(8).getPresentBit()));
             PN8_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(8).getModifyBit()));
             PN8_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(8).getLastAccessTime()));
-            PN8_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(8).getCorrespondingFrameNumber()));
+            PN8_FN.setText(getStringValue(process.getPageTable().getList_pages().get(8).getCorrespondingFrameNumber()));
 
             PN9_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(9).getPresentBit()));
             PN9_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(9).getModifyBit()));
             PN9_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(9).getLastAccessTime()));
-            PN9_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(9).getCorrespondingFrameNumber()));
+            PN9_FN.setText(getStringValue(process.getPageTable().getList_pages().get(9).getCorrespondingFrameNumber()));
 
             PN10_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(10).getPresentBit()));
             PN10_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(10).getModifyBit()));
             PN10_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(10).getLastAccessTime()));
-            PN10_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(10).getCorrespondingFrameNumber()));
+            PN10_FN.setText(getStringValue(process.getPageTable().getList_pages().get(10).getCorrespondingFrameNumber()));
 
             PN11_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(11).getPresentBit()));
             PN11_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(11).getModifyBit()));
             PN11_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(11).getLastAccessTime()));
-            PN11_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(11).getCorrespondingFrameNumber()));
+            PN11_FN.setText(getStringValue(process.getPageTable().getList_pages().get(11).getCorrespondingFrameNumber()));
 
             PN12_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(12).getPresentBit()));
             PN12_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(12).getModifyBit()));
             PN12_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(12).getLastAccessTime()));
-            PN12_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(12).getCorrespondingFrameNumber()));
+            PN12_FN.setText(getStringValue(process.getPageTable().getList_pages().get(12).getCorrespondingFrameNumber()));
 
             PN13_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(13).getPresentBit()));
             PN13_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(13).getModifyBit()));
             PN13_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(13).getLastAccessTime()));
-            PN13_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(13).getCorrespondingFrameNumber()));
+            PN13_FN.setText(getStringValue(process.getPageTable().getList_pages().get(13).getCorrespondingFrameNumber()));
 
             PN14_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(14).getPresentBit()));
             PN14_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(14).getModifyBit()));
             PN14_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(14).getLastAccessTime()));
-            PN14_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(14).getCorrespondingFrameNumber()));
+            PN14_FN.setText(getStringValue(process.getPageTable().getList_pages().get(14).getCorrespondingFrameNumber()));
 
             PN15_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(15).getPresentBit()));
             PN15_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(15).getModifyBit()));
             PN15_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(15).getLastAccessTime()));
-            PN15_FN.setText(String.valueOf(process.getPageTable().getList_pages().get(15).getCorrespondingFrameNumber()));
+            PN15_FN.setText(getStringValue(process.getPageTable().getList_pages().get(15).getCorrespondingFrameNumber()));
         }
         else{
             PN0_PB.setText(String.valueOf(0));
             PN0_MB.setText(String.valueOf(0));
             PN0_LMT.setText(String.valueOf(0));
-            PN0_FN.setText(String.valueOf(-1));
+            PN0_FN.setText(getStringValue(-1));
 
             PN1_PB.setText(String.valueOf(0));
             PN1_MB.setText(String.valueOf(0));
             PN1_LMT.setText(String.valueOf(0));
-            PN1_FN.setText(String.valueOf(-1));
+            PN1_FN.setText(getStringValue(-1));
 
             PN2_PB.setText(String.valueOf(0));
             PN2_MB.setText(String.valueOf(0));
             PN2_LMT.setText(String.valueOf(0));
-            PN2_FN.setText(String.valueOf(-1));
+            PN2_FN.setText(getStringValue(-1));
 
             PN3_PB.setText(String.valueOf(0));
             PN3_MB.setText(String.valueOf(0));
             PN3_LMT.setText(String.valueOf(0));
-            PN3_FN.setText(String.valueOf(-1));
+            PN3_FN.setText(getStringValue(-1));
 
             PN4_PB.setText(String.valueOf(0));
             PN4_MB.setText(String.valueOf(0));
             PN4_LMT.setText(String.valueOf(0));
-            PN4_FN.setText(String.valueOf(-1));
+            PN4_FN.setText(getStringValue(-1));
 
             PN5_PB.setText(String.valueOf(0));
             PN5_MB.setText(String.valueOf(0));
             PN5_LMT.setText(String.valueOf(0));
-            PN5_FN.setText(String.valueOf(-1));
+            PN5_FN.setText(getStringValue(-1));
 
             PN6_PB.setText(String.valueOf(0));
             PN6_MB.setText(String.valueOf(0));
             PN6_LMT.setText(String.valueOf(0));
-            PN6_FN.setText(String.valueOf(-1));
+            PN6_FN.setText(getStringValue(-1));
 
             PN7_PB.setText(String.valueOf(0));
             PN7_MB.setText(String.valueOf(0));
             PN7_LMT.setText(String.valueOf(0));
-            PN7_FN.setText(String.valueOf(-1));
+            PN7_FN.setText(getStringValue(-1));
 
             PN8_PB.setText(String.valueOf(0));
             PN8_MB.setText(String.valueOf(0));
             PN8_LMT.setText(String.valueOf(0));
-            PN8_FN.setText(String.valueOf(-1));
+            PN8_FN.setText(getStringValue(-1));
 
             PN9_PB.setText(String.valueOf(0));
             PN9_MB.setText(String.valueOf(0));
             PN9_LMT.setText(String.valueOf(0));
-            PN9_FN.setText(String.valueOf(-1));
+            PN9_FN.setText(getStringValue(-1));
 
             PN10_PB.setText(String.valueOf(0));
             PN10_MB.setText(String.valueOf(0));
             PN10_LMT.setText(String.valueOf(0));
-            PN10_FN.setText(String.valueOf(-1));
+            PN10_FN.setText(getStringValue(-1));
 
             PN11_PB.setText(String.valueOf(0));
             PN11_MB.setText(String.valueOf(0));
             PN11_LMT.setText(String.valueOf(0));
-            PN11_FN.setText(String.valueOf(-1));
+            PN11_FN.setText(getStringValue(-1));
 
             PN12_PB.setText(String.valueOf(0));
             PN12_MB.setText(String.valueOf(0));
             PN12_LMT.setText(String.valueOf(0));
-            PN12_FN.setText(String.valueOf(-1));
+            PN12_FN.setText(getStringValue(-1));
 
             PN13_PB.setText(String.valueOf(0));
             PN13_MB.setText(String.valueOf(0));
             PN13_LMT.setText(String.valueOf(0));
-            PN13_FN.setText(String.valueOf(-1));
+            PN13_FN.setText(getStringValue(-1));
 
             PN14_PB.setText(String.valueOf(0));
             PN14_MB.setText(String.valueOf(0));
             PN14_LMT.setText(String.valueOf(0));
-            PN14_FN.setText(String.valueOf(-1));
+            PN14_FN.setText(getStringValue(-1));
 
             PN15_PB.setText(String.valueOf(0));
             PN15_MB.setText(String.valueOf(0));
             PN15_LMT.setText(String.valueOf(0));
-            PN15_FN.setText(String.valueOf(-1));
+            PN15_FN.setText(getStringValue(-1));
         }
     }
     private void changeGUIRAM() {
@@ -902,69 +893,88 @@ public class App {
     private void setFrameInGUIRAM(Frame f) {
         switch (f.getFramenummer()){
             case 0: {
-                FN0_PID.setText(String.valueOf(f.getPid()));
-                FN0_PN.setText(String.valueOf(f.getPagenummer()));
+                FN0_PID.setText(getStringValue(f.getPid()));
+                FN0_PN.setText(getStringValue(f.getPagenummer()));
             }
             case 1: {
-                FN1_PID.setText(String.valueOf(f.getPid()));
-                FN1_PN.setText(String.valueOf(f.getPagenummer()));
+                FN1_PID.setText(getStringValue(f.getPid()));
+                FN1_PN.setText(getStringValue(f.getPagenummer()));
             }
             case 2: {
-                FN2_PID.setText(String.valueOf(f.getPid()));
-                FN2_PN.setText(String.valueOf(f.getPagenummer()));
+                FN2_PID.setText(getStringValue(f.getPid()));
+                FN2_PN.setText(getStringValue(f.getPagenummer()));
             }
             case 3: {
-                FN3_PID.setText(String.valueOf(f.getPid()));
-                FN3_PN.setText(String.valueOf(f.getPagenummer()));
+                FN3_PID.setText(getStringValue(f.getPid()));
+                FN3_PN.setText(getStringValue(f.getPagenummer()));
             }
             case 4: {
-                FN4_PID.setText(String.valueOf(f.getPid()));
-                FN4_PN.setText(String.valueOf(f.getPagenummer()));
+                FN4_PID.setText(getStringValue(f.getPid()));
+                FN4_PN.setText(getStringValue(f.getPagenummer()));
             }
             case 5: {
-                FN5_PID.setText(String.valueOf(f.getPid()));
-                FN5_PN.setText(String.valueOf(f.getPagenummer()));
+                FN5_PID.setText(getStringValue(f.getPid()));
+                FN5_PN.setText(getStringValue(f.getPagenummer()));
             }
             case 6: {
-                FN6_PID.setText(String.valueOf(f.getPid()));
-                FN6_PN.setText(String.valueOf(f.getPagenummer()));
+                FN6_PID.setText(getStringValue(f.getPid()));
+                FN6_PN.setText(getStringValue(f.getPagenummer()));
             }
             case 7: {
-                FN7_PID.setText(String.valueOf(f.getPid()));
-                FN7_PN.setText(String.valueOf(f.getPagenummer()));
+                FN7_PID.setText(getStringValue(f.getPid()));
+                FN7_PN.setText(getStringValue(f.getPagenummer()));
             }
             case 8: {
-                FN8_PID.setText(String.valueOf(f.getPid()));
-                FN8_PN.setText(String.valueOf(f.getPagenummer()));
+                FN8_PID.setText(getStringValue(f.getPid()));
+                FN8_PN.setText(getStringValue(f.getPagenummer()));
             }case 9: {
-                FN9_PID.setText(String.valueOf(f.getPid()));
-                FN9_PN.setText(String.valueOf(f.getPagenummer()));
+                FN9_PID.setText(getStringValue(f.getPid()));
+                FN9_PN.setText(getStringValue(f.getPagenummer()));
             }case 10: {
-                FN10_PID.setText(String.valueOf(f.getPid()));
-                FN10_PN.setText(String.valueOf(f.getPagenummer()));
+                FN10_PID.setText(getStringValue(f.getPid()));
+                FN10_PN.setText(getStringValue(f.getPagenummer()));
             }
             case 11: {
-                FN11_PID.setText(String.valueOf(f.getPid()));
-                FN11_PN.setText(String.valueOf(f.getPagenummer()));
+                FN11_PID.setText(getStringValue(f.getPid()));
+                FN11_PN.setText(getStringValue(f.getPagenummer()));
             }
             default: break;
         }
+    }
+
+    private String getStringValue(int value) {
+        if (value == -1){
+            return "Null";
+        }
+        else
+            return String.valueOf(value);
     }
 
 
     public App() {
         executeOneProcessButton.addActionListener(e -> {
             if (!instructions.isEmpty()){
+                CurrentTimerLabel.setText("Current time:");
                 executeOneInstruction();
             }
-            else
+            else {
+                CurrentTimerLabel.setText("Finished time:");
                 System.out.println("All instructions are executed!");
+                restart();
+            }
         });
         executeAllProcessesButton.addActionListener(e -> {
             while (!instructions.isEmpty()) {
                 executeOneInstruction();
             }
+            CurrentTimerLabel.setText("Finished time:");
             System.out.println("All instructions are executed!");
+            restart();
         });
+    }
+
+    private void restart() {
+        initialiseren();
+        readingWholeXMLFile();
     }
 }
