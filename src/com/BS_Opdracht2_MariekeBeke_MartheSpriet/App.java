@@ -722,7 +722,7 @@ public class App {
                 process = p;
             }
         }
-        if (process != null) {
+        if (process != null && instruction.getOperation() != OperationProcess.Terminate) {
             PN0_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(0).getPresentBit()));
             PN0_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(0).getModifyBit()));
             PN0_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(0).getLastAccessTime()));
