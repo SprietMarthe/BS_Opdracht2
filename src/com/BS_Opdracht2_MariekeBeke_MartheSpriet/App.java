@@ -301,13 +301,12 @@ public class App {
         boolean processInRAM = isProcessInRAM(pID);
         if (!processInRAM) {
             addProcessToRAM(pID);
-            // TODO: is er een controle op die 4 processen?
             // ?TODO? hierin ook de pagetable initialiseren?
         }
         // Is current page in RAM?
         boolean pageInRAM = isPageInRAM(pID, page);
         if (!pageInRAM) {
-            addPageToRAM(pID, page);
+            addPageToRAM(process, page);
         }
 
         // WRITE
@@ -315,41 +314,6 @@ public class App {
         page.setLastAccessTime(timer);
 
         timer++;
-
-        // OLD
-        /*// controle of process al in de RAM zit
-        boolean processIsInRAM = false;
-        for (int i=0; i<present_process_list.size(); i++) {
-            if (instruction.getProcessID() == present_process_list.get(i).getProcessID()) processIsInRAM=true;
-        }
-
-        // indien niet in RAM, toevoegen
-        if (!processIsInRAM) {
-            addProcessToRAM(instruction.getProcessID());      // gebruik hier methode die jij gemaakt heb, ben niet zeker of mijn gebruik juist is
-        }
-
-        // controleren of page al in RAM zit
-        boolean pageIsInRAM = false;
-        Page newPage = new Page(instruction.getAddress()/4096, 0, 0, 0, -1);
-        for (Frame f : ram.getList_frames()) {
-            if ((f.getPid() == instruction.getProcessID() && (f.getPagenummer() == instruction.getAddress() / 4096)))
-                pageIsInRAM = true;
-        }
-
-        // indien niet in RAM, toevoegen
-        int frameNumberOfChange = -1;
-        if (!pageIsInRAM) {
-            // zoek least recently used
-            Page lru = leastRecentlyUsed();
-            // eventueel wegschrijven, wordt in functie gecontroleerd als nodig
-            frameNumberOfChange = removePageFromRAM(lru);
-            // page toevoegen
-            addPageToRAM(newPage, frameNumberOfChange, instruction);
-        }
-        newPage.setLastAccessTime(timer);
-        newPage.setModifyBit(1);
-
-        timer++;*/
     }
 
     private void operationRead(Instruction instruction) {
@@ -378,53 +342,18 @@ public class App {
         boolean processInRAM = isProcessInRAM(pID);
         if (!processInRAM) {
             addProcessToRAM(pID);
-            // TODO? waar is er een controle op die 4 processen?
             // ?TODO? hierin ook de pagetable initialiseren?
         }
         // Is current page in RAM?
         boolean pageInRAM = isPageInRAM(pID, page);
         if (!pageInRAM) {
-            addPageToRAM(pID, page);
+            addPageToRAM(process, page);
         }
 
         // READ
         page.setLastAccessTime(timer);
 
         timer++;
-
-        // OLD
-        /*// controle of process al in de RAM zit
-        boolean processIsInRAM = false;
-        for (int i=0; i<present_process_list.size(); i++) {
-            if (instruction.getProcessID() == present_process_list.get(i).getProcessID()) processIsInRAM=true;
-        }
-
-        // indien niet in RAM, toevoegen
-        if (!processIsInRAM) {
-            addProcessToRAM(instruction.getProcessID());      // gebruik hier methode die jij gemaakt heb, ben niet zeker of mijn gebruik juist is
-        }
-
-        // controleren of page al in RAM zit
-        boolean pageIsInRAM = false;
-        Page newPage = new Page(instruction.getAddress()/4096, 0, 0, 0, -1);
-        for (Frame f : ram.getList_frames()) {
-            if ((f.getPid() == instruction.getProcessID() && (f.getPagenummer() == instruction.getAddress() / 4096)))
-                pageIsInRAM = true;
-        }
-
-        // indien niet in RAM, toevoegen
-        int frameNumberOfChange = -1;
-        if (!pageIsInRAM) {
-            // zoek least recently used
-            Page lru = leastRecentlyUsed();
-            // eventueel wegschrijven, wordt in functie gecontroleerd als nodig
-            frameNumberOfChange = removePageFromRAM(lru);
-            // page toevoegen
-            addPageToRAM(newPage, frameNumberOfChange, instruction);
-        }
-        newPage.setLastAccessTime(timer);
-
-        timer++;*/
     }
 
     private void operationStart(Instruction instruction) {
@@ -554,6 +483,7 @@ public class App {
         }
         return null;
     }
+
     private List<Frame> findLRUFrame(List<Frame> verwijderdeFrames, List<Frame> huidigeFramesPerProcess, int aantalNogVerwijderen) {
         for (int i=0; i<aantalNogVerwijderen; i++){
             Frame LRUFrame = null;
@@ -578,6 +508,7 @@ public class App {
         }
         return verwijderdeFrames;
     }
+
     private int getLRU(Frame f) {
         int LATwaarde = -1;
         for (Process p :process_list){
@@ -589,6 +520,7 @@ public class App {
         }
         return LATwaarde;
     }
+
     private List<Frame> findAllFramesPerProcess(Process p) {
         List<Frame> huidigeFramesPerProcess = new ArrayList<>();
         for (Frame f : ram.getList_frames()){
@@ -598,6 +530,7 @@ public class App {
         }
         return huidigeFramesPerProcess;
     }
+
     private int checkHoeveelFramesPerProcessVerwijderen() {
         int numberOfProcessesPresent = present_process_list.size();
         if (numberOfProcessesPresent == 0){
@@ -618,17 +551,19 @@ public class App {
         System.out.println("numberOfProcessesPresent: " + numberOfProcessesPresent);
         return 0;
     }
+
     private void removeFramesFromCurrentProcesses(Frame frameVerwijderd) {
         for (Process p :present_process_list){
             if (p.getProcessID() == frameVerwijderd.getPid()){
                 for (Page page : p.getPageTable().getList_pages()){
                     if (frameVerwijderd.getPagenummer() == page.getPageNumber()){
                         page.setPresentBit(0);
-                        // page.setModifyBit(0);
-                        // TODO
+                        if (page.getModifyBit() == 1) {
+                            amountOfWrites++;
+                            page.setModifyBit(0);
+                        }
                         page.setLastAccessTime(timer);
                         page.setCorrespondingFrameNumber(-1);
-                        amountOfWrites++;
                     }
                 }
             }
@@ -640,7 +575,6 @@ public class App {
         else
             return -1;
     }
-
 
     private boolean isProcessInRAM(int processID) {
         boolean inRAM = false;
@@ -654,76 +588,60 @@ public class App {
         boolean inRAM = false;
         for (Process p: present_process_list) {
             for (Page page1: p.getPageTable().getList_pages()) {
-                if (page1.getCorrespondingFrameNumber() != -1) inRAM = true;
+                if (page1.getCorrespondingFrameNumber() != -1) {
+                    inRAM = true;
+                    break;
+                }
             }
         }
         return inRAM;
     }
 
-    // TODO: opnieuw schrijven
-/*
-    private Page leastRecentlyUsed() {
+    private Page leastRecentlyUsed(Process process) {
         int min = timer;
-        Page lru = new Page();
-        Process p = new Process();
+        Page lru = null;
         for (Frame f: ram.getList_frames()) {
-            // process vinden om aan de pagetable te kunnen
-            for (int i=0; i<present_process_list.size(); i++) {
-                if (present_process_list.get(i).getProcessID() == f.getPid()) {
-                    p = present_process_list.get(i);
-                }
-            }
-            if (p != null){
-                // kleinste acces time zoeken
-                for (Page page : p.getPageTable().getList_pages()) {
-                    if (page.getLastAccessTime() < min) {
-                        min = page.getLastAccessTime();
-                        lru = page;
-                    }
-                }
+            if (f.getPid() == process.getProcessID() || process.getPageTable().getList_pages().get(f.getPagenummer()).getLastAccessTime() < min) {
+                min = process.getPageTable().getList_pages().get(f.getPagenummer()).getLastAccessTime();
+                lru = process.getPageTable().getList_pages().get(f.getPagenummer());
             }
         }
         return lru;
     }
-*/
-    // TODO: opnieuw schrijven
-/*
-    private int removePageFromRAM(Page lru) {
-        int frameNumberWithChange = lru.getCorrespondingFrameNumber();
-        if (lru.getModifyBit() == 1) {
-            lru.setPresentBit(0);
-            lru.setModifyBit(0);
-            lru.setCorrespondingFrameNumber(-1);
-            amountOfWrites++;
-        }
-        if (lru.getCorrespondingFrameNumber() != -1) {
-            ram.getList_frames().get(lru.getCorrespondingFrameNumber()).setPid(-1);
-            ram.getList_frames().get(lru.getCorrespondingFrameNumber()).setPagenummer(-1);
-        }
-        return frameNumberWithChange;
-    }
-*/
 
-    private void addPageToRAM(int processID, Page page) {
+    private void addPageToRAM(Process process, Page page) {
         // Look for empty frame
         int frameNumber = -1;
         boolean found = false;
         for (Frame f: ram.getList_frames()) {
-            if (f.getPid() == processID || f.getPagenummer() == -1) {
+            if (f.getPid() == process.getProcessID() || f.getPagenummer() == -1) {
                 found = true;
                 frameNumber = f.getFramenummer();
             }
         }
 
-        // if not found iets wegdoen
+        if (!found) {
+            frameNumber = removeOnePageFromRAM(process);
+        }
 
         // Connect page to frame
         page.setPresentBit(1);
         page.setLastAccessTime(timer);
         page.setCorrespondingFrameNumber(frameNumber);
 
-        ram.getList_frames().get(frameNumber).setPid(processID);
         ram.getList_frames().get(frameNumber).setPagenummer(page.getPageNumber());
+    }
+
+    private int removeOnePageFromRAM(Process process) {
+        Page lru = leastRecentlyUsed(process);
+        int frameNumber = lru.getCorrespondingFrameNumber();
+        lru.setCorrespondingFrameNumber(-1);
+        lru.setPresentBit(0);
+        if (lru.getModifyBit() == 1) {
+            amountOfWrites++;
+            lru.setModifyBit(0);
+        }
+        return frameNumber;
     }
 
     private void changeGUIValuesOneProcess(Instruction instruction) {
