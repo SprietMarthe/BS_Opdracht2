@@ -438,7 +438,6 @@ public class App {
         else
             waitingProcesses.add(process);
         //System.out.println("\nRam herverdeeld: " + ram);
-        amountOfWrites++;
     }
     private void findLRUFrame(List<Frame> verwijderdeFrames, List<Frame> huidigeFramesPerProcess, int aantalNogVerwijderen) {
         for (int i=0; i<aantalNogVerwijderen; i++){
@@ -510,9 +509,6 @@ public class App {
         return 0;
     }
     private void removeFramesFromCurrentProcesses(Frame frameVerwijderd) {
-        //TODO: deze functie wordt eig nooit ver uitgevoerd
-        // het meegegeven frame is (bijna) altijd -1
-        // doordat write nog niet goed werkt?
         if (frameVerwijderd.getPagenummer() != -1){
             for (Process p :present_process_list){
                 if (p.getProcessID() == frameVerwijderd.getPid()) {
@@ -585,6 +581,7 @@ public class App {
         page.setCorrespondingFrameNumber(frameNumber);
 
         ram.getList_frames().get(frameNumber).setPagenummer(page.getPageNumber());
+        amountOfWrites++;
     }
 
     private int removeOnePageFromRAM(Process process) {
