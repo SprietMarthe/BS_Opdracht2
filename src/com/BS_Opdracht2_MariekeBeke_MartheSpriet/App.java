@@ -101,7 +101,6 @@ public class App {
     private JLabel AddrVirtValue;
     private JLabel AddrRealLabel;
     private JLabel AddrRealValue;
-    private JLabel PageTableLabel;
     private JPanel PanelInfoAndRam;
     private JLabel RAMLabel;
     private JLabel FrameNumberLabel;
@@ -155,10 +154,11 @@ public class App {
     private JLabel WritingLabel;
     private JLabel NomberOfSwappesLabel;
     private JLabel NumberOfSwappesValue;
+    private JLabel CurrentProcessValue;
     private JButton allProcesses;
     private JButton oneProcess;
 
-    static final int welkeXMLFile=3;
+    static final int welkeXMLFile=1;
     static List<Process> present_process_list;
     static List<Process> process_list;
     static int timer;
@@ -276,6 +276,7 @@ public class App {
         }
         // Current page number
         int pageNumber = (int) floor(vAdress/4096);
+        System.out.println(pageNumber);
         // Current Page
         Page page = null;
         for (Page p: process.getPageTable().getList_pages()) {
@@ -654,6 +655,8 @@ public class App {
             }
         }
         if (process != null && instruction.getOperation() != OperationProcess.Terminate) {
+            CurrentProcessValue.setText(String.valueOf(process.getProcessID()));
+
             PN0_PB.setText(String.valueOf(process.getPageTable().getList_pages().get(0).getPresentBit()));
             PN0_MB.setText(String.valueOf(process.getPageTable().getList_pages().get(0).getModifyBit()));
             PN0_LMT.setText(String.valueOf(process.getPageTable().getList_pages().get(0).getLastAccessTime()));
@@ -735,6 +738,8 @@ public class App {
             PN15_FN.setText(getStringValue(process.getPageTable().getList_pages().get(15).getCorrespondingFrameNumber()));
         }
         else{
+            CurrentProcessValue.setText("None");
+
             PN0_PB.setText(String.valueOf(0));
             PN0_MB.setText(String.valueOf(0));
             PN0_LMT.setText(String.valueOf(0));
