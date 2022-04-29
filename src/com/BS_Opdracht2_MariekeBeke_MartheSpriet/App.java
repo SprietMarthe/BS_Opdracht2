@@ -354,8 +354,7 @@ public class App {
     private void operationStart(Instruction instruction) {
         Process process = new Process(
                 instruction.getProcessID(),
-                new PageTable(timer, numberOfPages),
-                0
+                new PageTable(timer, numberOfPages)
         );
         System.out.print("Process toegevoegd: " + process.getProcessID());
         process_list.add(process);

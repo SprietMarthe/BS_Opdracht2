@@ -593,7 +593,7 @@
               <grid row="0" column="0" row-span="1" col-span="5" vsize-policy="0" hsize-policy="0" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <text value="PageTable"/>
+              <text value="PageTable From Current Process"/>
             </properties>
           </component>
           <component id="866a9" class="javax.swing.JLabel">
