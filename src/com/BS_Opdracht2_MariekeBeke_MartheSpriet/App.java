@@ -301,7 +301,6 @@ public class App {
         boolean processInRAM = isProcessInRAM(pID);
         if (!processInRAM) {
             addProcessToRAM(pID);
-            // ?TODO? hierin ook de pagetable initialiseren?
         }
         // Is current page in RAM?
         boolean pageInRAM = isPageInRAM(pID, page);
@@ -342,7 +341,6 @@ public class App {
         boolean processInRAM = isProcessInRAM(pID);
         if (!processInRAM) {
             addProcessToRAM(pID);
-            // ?TODO? hierin ook de pagetable initialiseren?
         }
         // Is current page in RAM?
         boolean pageInRAM = isPageInRAM(pID, page);
@@ -651,11 +649,13 @@ public class App {
         InstrOpValue.setText(String.valueOf(instruction.getOperation()));
         InstrAddrValue.setText(String.valueOf(instruction.getAddress()));
 
+        //virtual address
         int virtual = instruction.getAddress();
         AddrVirtValue.setText(String.valueOf(virtual));
-        int pageNumber = instruction.getAddress()/4096;
+        // real address
+        int pageNumber = (int) floor(virtual/4096);
         int offset = virtual-pageNumber*4096;
-        int frameNumber = -1;
+        int frameNumber = 0;
         for (Frame f: ram.getList_frames()) {
             if (f.getPagenummer() == pageNumber) {
                 frameNumber = f.getFramenummer();
