@@ -438,7 +438,6 @@ public class App {
         else
             waitingProcesses.add(process);
         //System.out.println("\nRam herverdeeld: " + ram);
-        amountOfWrites++;
     }
     private void findLRUFrame(List<Frame> verwijderdeFrames, List<Frame> huidigeFramesPerProcess, int aantalNogVerwijderen) {
         for (int i=0; i<aantalNogVerwijderen; i++){
@@ -585,6 +584,7 @@ public class App {
         page.setCorrespondingFrameNumber(frameNumber);
 
         ram.getList_frames().get(frameNumber).setPagenummer(page.getPageNumber());
+        amountOfWrites++;
     }
 
     private int removeOnePageFromRAM(Process process) {
