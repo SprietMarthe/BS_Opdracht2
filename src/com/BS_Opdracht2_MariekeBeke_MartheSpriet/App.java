@@ -183,6 +183,7 @@ public class App {
         present_process_list = new ArrayList<>();
         process_list = new ArrayList<>();
         timer = 0;
+        amountOfWrites = 0;
         instructions = new LinkedList<>();
         ram = new RAM(numberOfFrames);
         waitingProcesses = new LinkedList<>();
@@ -270,20 +271,12 @@ public class App {
         // Current virtual adress
         int vAdress = instruction.getAddress();
         // Current process
-        Process process = null;
-        for (Process p: process_list) {
-            if (p.getProcessID() == pID) process = p;
-        }
+        Process process = findProcess(instruction.getProcessID());
         // Current page number
         int pageNumber = (int) floor(vAdress/4096);
-        System.out.println(pageNumber);
         // Current Page
-        Page page = null;
-        for (Page p: process.getPageTable().getList_pages()) {
-            if (p.getPageNumber() == pageNumber) page = p;
-        }
-        // Current Offset
-        int offset = vAdress-pageNumber*4096;
+        assert process != null;
+        Page page = findPage(pageNumber, process.getPageTable().getList_pages());
 
         // MAKE SURE PAGE IS IN RAM
         // Is current process in RAM?
@@ -298,6 +291,7 @@ public class App {
         }
 
         // WRITE
+        assert page != null;
         page.setModifyBit(1);
         page.setLastAccessTime(timer);
     }
@@ -308,20 +302,12 @@ public class App {
         // Current virtual adress
         int vAdress = instruction.getAddress();
         // Current process
-        Process process = null;
-        for (Process p: process_list) {
-            if (p.getProcessID() == pID) process = p;
-        }
+        Process process = findProcess(instruction.getProcessID());
         // Current page number
         int pageNumber = (int) floor(vAdress/4096);
         // Current Page
-        Page page = null;
-        for (Page p: process.getPageTable().getList_pages()) {
-            if (p.getPageNumber() == pageNumber) page = p;
-        }
-        // Current Offset
-        int offset = vAdress-pageNumber*4096;
-
+        assert process != null;
+        Page page = findPage(pageNumber, process.getPageTable().getList_pages());
         // MAKE SURE PAGE IS IN RAM
         // Is current process in RAM?
         boolean processInRAM = isProcessInRAM(pID);
@@ -335,6 +321,7 @@ public class App {
         }
 
         // READ
+        assert page != null;
         page.setLastAccessTime(timer);
     }
     private void operationStart(Instruction instruction) {
@@ -451,6 +438,7 @@ public class App {
         else
             waitingProcesses.add(process);
         //System.out.println("\nRam herverdeeld: " + ram);
+        amountOfWrites++;
     }
     private void findLRUFrame(List<Frame> verwijderdeFrames, List<Frame> huidigeFramesPerProcess, int aantalNogVerwijderen) {
         for (int i=0; i<aantalNogVerwijderen; i++){
@@ -545,29 +533,28 @@ public class App {
     private boolean isProcessInRAM(int processID) {
         boolean inRAM = false;
         for (Process p: present_process_list) {
-            if (p.getProcessID() == processID) inRAM = true;
-        }
-        return inRAM;
-    }
-
-    private boolean isPageInRAM(int processID, Page page) {
-        boolean inRAM = false;
-        for (Process p: present_process_list) {
-            for (Page page1: p.getPageTable().getList_pages()) {
-                if (page1.getCorrespondingFrameNumber() != -1) {
-                    inRAM = true;
-                    break;
-                }
+            if (p.getProcessID() == processID) {
+                inRAM = true;
+                break;
             }
         }
         return inRAM;
     }
-
+    private boolean isPageInRAM(int processID, Page page) {
+        boolean inRAM = false;
+        Process p = findProcess(processID);
+        if (p != null) {
+            if (page.getCorrespondingFrameNumber() != -1) {
+                inRAM = true;
+            }
+        }
+        return inRAM;
+    }
     private Page leastRecentlyUsed(Process process) {
         int min = timer;
         Page lru = null;
         for (Frame f: ram.getList_frames()) {
-            if (f.getPid() == process.getProcessID() || process.getPageTable().getList_pages().get(f.getPagenummer()).getLastAccessTime() < min) {
+            if (f.getPid() == process.getProcessID() && process.getPageTable().getList_pages().get(f.getPagenummer()).getLastAccessTime() < min) {
                 min = process.getPageTable().getList_pages().get(f.getPagenummer()).getLastAccessTime();
                 lru = process.getPageTable().getList_pages().get(f.getPagenummer());
             }
@@ -580,9 +567,11 @@ public class App {
         int frameNumber = -1;
         boolean found = false;
         for (Frame f: ram.getList_frames()) {
-            if (f.getPid() == process.getProcessID() || f.getPagenummer() == -1) {
-                found = true;
-                frameNumber = f.getFramenummer();
+            if (f.getPid() == process.getProcessID()) {
+                if (f.getPagenummer() == -1){
+                    found = true;
+                    frameNumber = f.getFramenummer();
+                }
             }
         }
 
@@ -619,6 +608,14 @@ public class App {
         }
         return null;
     }
+    private Page findPage(int pageNumber, List<Page> list_pages) {
+        for (Page p: list_pages) {
+            if (p.getPageNumber() == pageNumber)
+                return p;
+        }
+        return null;
+    }
+
 
     private void changeGUIValuesOneProcess(Instruction instruction) {
         TimerValue.setText(String.valueOf(timer));
@@ -639,7 +636,7 @@ public class App {
                 frameNumber = f.getFramenummer();
             }
         }
-        int real = frameNumber + offset;
+        int real = frameNumber*4096 + offset;
         AddrRealValue.setText(String.valueOf(real));
 
         NumberOfSwappesValue.setText(String.valueOf(amountOfWrites));
