@@ -89,17 +89,10 @@ public class App {
     private JLabel PN14_FN;
     private JLabel PN15_FN;
     private JPanel PanelInstruction;
-    private JLabel InstructionLabel;
-    private JLabel InstrPIDLabel;
     private JLabel InstrPIDValue;
-    private JLabel InstrOpLabel;
     private JLabel InstrOpValue;
-    private JLabel InstrAddrLabel;
     private JLabel InstrAddrValue;
-    private JLabel AddressLabel;
-    private JLabel AddrVirtLAbel;
     private JLabel AddrVirtValue;
-    private JLabel AddrRealLabel;
     private JLabel AddrRealValue;
     private JPanel PanelInfoAndRam;
     private JLabel RAMLabel;
@@ -150,15 +143,17 @@ public class App {
     private JLabel TimerValue;
     private JLabel CurrentTimerLabel;
     private JPanel TimerPanel;
-    private JLabel TimeLabel;
-    private JLabel WritingLabel;
     private JLabel NomberOfSwappesLabel;
     private JLabel NumberOfSwappesValue;
     private JLabel CurrentProcessValue;
+    private JLabel NextInstrPIDValue;
+    private JLabel NextInstrOpValue;
+    private JLabel NextInstrAddrValue;
+    private JLabel OffsetValue;
     private JButton allProcesses;
     private JButton oneProcess;
 
-    static final int welkeXMLFile=1;
+    static final int welkeXMLFile=3;
     static List<Process> present_process_list;
     static List<Process> process_list;
     static int timer;
@@ -517,7 +512,7 @@ public class App {
                     if (page.getModifyBit() == 1) {
                         amountOfWrites++;
                         page.setModifyBit(0);
-                        System.out.println(amountOfWrites);
+                        //System.out.println(amountOfWrites);
                     }
                     page.setLastAccessTime(timer);
                     page.setCorrespondingFrameNumber(-1);
@@ -591,7 +586,7 @@ public class App {
         lru.setPresentBit(0);
         if (lru.getModifyBit() == 1) {
             amountOfWrites++;
-            System.out.println(amountOfWrites);
+            //System.out.println(amountOfWrites);
             lru.setModifyBit(0);
         }
         return frameNumber;
@@ -617,10 +612,32 @@ public class App {
     private void changeGUIValuesOneProcess(Instruction instruction) {
         TimerValue.setText(String.valueOf(timer));
 
+        setInstructiesGUI(instruction);
+        setAddressenGUI(instruction);
+
+        NumberOfSwappesValue.setText(String.valueOf(amountOfWrites));
+
+        changeGUIRAM();
+        changeGUIPT(instruction);
+    }
+    private void setInstructiesGUI(Instruction instruction) {
         InstrPIDValue.setText(String.valueOf(instruction.getProcessID()));
         InstrOpValue.setText(String.valueOf(instruction.getOperation()));
         InstrAddrValue.setText(String.valueOf(instruction.getAddress()));
 
+        if (!instructions.isEmpty()){
+            Instruction instr = instructions.peek();
+            NextInstrPIDValue.setText(String.valueOf(instr.getProcessID()));
+            NextInstrOpValue.setText(String.valueOf(instr.getOperation()));
+            NextInstrAddrValue.setText(String.valueOf(instr.getAddress()));
+        }
+        else{
+            NextInstrPIDValue.setText("Null");
+            NextInstrOpValue.setText("Null");
+            NextInstrAddrValue.setText("Null");
+        }
+    }
+    private void setAddressenGUI(Instruction instruction) {
         //virtual address
         int virtual = instruction.getAddress();
         AddrVirtValue.setText(String.valueOf(virtual));
@@ -635,11 +652,8 @@ public class App {
         }
         int real = frameNumber*4096 + offset;
         AddrRealValue.setText(String.valueOf(real));
-
-        NumberOfSwappesValue.setText(String.valueOf(amountOfWrites));
-
-        changeGUIRAM();
-        changeGUIPT(instruction);
+        // offset
+        OffsetValue.setText(String.valueOf(offset));
     }
     private void changeGUIPT(Instruction instruction) {
         Process process = null;
