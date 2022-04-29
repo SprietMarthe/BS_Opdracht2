@@ -88,7 +88,6 @@ public class App {
     private JLabel PN13_FN;
     private JLabel PN14_FN;
     private JLabel PN15_FN;
-    private JPanel PanelInstruction;
     private JLabel InstrPIDValue;
     private JLabel InstrOpValue;
     private JLabel InstrAddrValue;
@@ -138,20 +137,14 @@ public class App {
     private JLabel FN11_PN;
     private JLabel FN11_PID;
     private JLabel FN0_PN;
-    private JPanel ButtonPanel;
-    private JPanel AddressPanel;
     private JLabel TimerValue;
     private JLabel CurrentTimerLabel;
-    private JPanel TimerPanel;
-    private JLabel NomberOfSwappesLabel;
     private JLabel NumberOfSwappesValue;
     private JLabel CurrentProcessValue;
     private JLabel NextInstrPIDValue;
     private JLabel NextInstrOpValue;
     private JLabel NextInstrAddrValue;
     private JLabel OffsetValue;
-    private JButton allProcesses;
-    private JButton oneProcess;
 
     static final int welkeXMLFile=3;
     static List<Process> present_process_list;
@@ -183,7 +176,6 @@ public class App {
         ram = new RAM(numberOfFrames);
         waitingProcesses = new LinkedList<>();
     }
-
     private static void displayJFrame() {
         JFrame frame = new JFrame("Opdracht2_OperatingSystems2");
         frame.setContentPane(new App().panelMain);
@@ -196,7 +188,6 @@ public class App {
         frame.getContentPane().getComponent(2).setBackground(Color.gray);
 
     }
-
     public static void readingWholeXMLFile(){
         File file = null;
         try {
@@ -231,6 +222,7 @@ public class App {
         }
     }
 
+
     private void executeOneInstruction() {
         Instruction instruction = instructions.poll();
         //System.out.print(instruction);
@@ -252,7 +244,6 @@ public class App {
         timer++;
         changeGUIValuesOneProcess(instruction);
     }
-
 
     private void operationTerminate(Instruction instruction) {
         Process process = findProcess(instruction.getProcessID());
