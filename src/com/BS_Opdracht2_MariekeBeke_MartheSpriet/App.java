@@ -651,8 +651,18 @@ public class App {
         InstrOpValue.setText(String.valueOf(instruction.getOperation()));
         InstrAddrValue.setText(String.valueOf(instruction.getAddress()));
 
-        AddrVirtValue.setText(String.valueOf(instruction.getAddress()));
-        AddrRealValue.setText(String.valueOf(instruction.getAddress()));
+        int virtual = instruction.getAddress();
+        AddrVirtValue.setText(String.valueOf(virtual));
+        int pageNumber = instruction.getAddress()/4096;
+        int offset = virtual-pageNumber*4096;
+        int frameNumber = -1;
+        for (Frame f: ram.getList_frames()) {
+            if (f.getPagenummer() == pageNumber) {
+                frameNumber = f.getFramenummer();
+            }
+        }
+        int real = frameNumber + offset;
+        AddrRealValue.setText(String.valueOf(real));
 
         NumberOfSwappesValue.setText(String.valueOf(amountOfWrites));
 
