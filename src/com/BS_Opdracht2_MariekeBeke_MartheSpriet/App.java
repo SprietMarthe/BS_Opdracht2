@@ -189,14 +189,7 @@ public class App {
     }
 
     private static void displayJFrame() {
-//        JFrame frame= new JFrame("App");
-//        frame.setContentPane(new App().panelMain);
-//        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//        frame.pack();
-//        frame.setVisible(true);
-//        frame.setSize(new Dimension(1200, 700));
-
-        JFrame frame = new JFrame("App2");
+        JFrame frame = new JFrame("Opdracht2_OperatingSystems2");
         frame.setContentPane(new App().panelMain);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.pack();
