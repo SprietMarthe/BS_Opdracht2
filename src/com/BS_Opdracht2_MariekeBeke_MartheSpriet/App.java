@@ -158,7 +158,7 @@ public class App {
     private JButton allProcesses;
     private JButton oneProcess;
 
-    static final int welkeXMLFile=1;
+    static final int welkeXMLFile=3;
     static List<Process> present_process_list;
     static List<Process> process_list;
     static int timer;
@@ -237,12 +237,11 @@ public class App {
 
     private void executeOneInstruction() {
         Instruction instruction = instructions.poll();
-        System.out.print(instruction);
-        System.out.println(present_process_list);
+        //System.out.print(instruction);
         assert instruction != null;
         if (instruction.getOperation() == OperationProcess.Start){
             operationStart(instruction);
-            System.out.println(present_process_list);
+            //System.out.println(present_process_list);
         }
         else if (instruction.getOperation() == OperationProcess.Read){
             operationRead(instruction);
@@ -252,6 +251,7 @@ public class App {
         }
         else if (instruction.getOperation() == OperationProcess.Terminate){
             operationTerminate(instruction);
+            //System.out.println(present_process_list);
         }
         timer++;
         changeGUIValuesOneProcess(instruction);
@@ -265,7 +265,7 @@ public class App {
                 process = p;
             }
         }
-        System.out.print("Process verwijderd: " + process.getProcessID());
+        //System.out.print("Process verwijderd: " + process.getProcessID());
         removeProcessFromRAM(process);
     }
 
@@ -349,7 +349,7 @@ public class App {
                 instruction.getProcessID(),
                 new PageTable(timer, numberOfPages)
         );
-        System.out.print("Process toegevoegd: " + process.getProcessID());
+        //System.out.print("Process toegevoegd: " + process.getProcessID());
         process_list.add(process);
         addProcessToRAM(process.getProcessID());
     }
@@ -358,12 +358,12 @@ public class App {
 
     private void removeProcessFromRAM(Process process) {
         int aantalFramesToegevoegdAanAndereProcesses = checkHoeveelFramesPerProcessToevoegen();
-        System.out.println("\n# Frames per process toegevoegd: " + aantalFramesToegevoegdAanAndereProcesses);
+        //System.out.println("\n# Frames per process toegevoegd: " + aantalFramesToegevoegdAanAndereProcesses);
         List<Frame> toegevoegdeFrames = null;
         for (Process p : present_process_list){
             if (p == process){
                 toegevoegdeFrames = findAllFramesPerProcess(p);
-                System.out.println("toegevoegdeFrames aan andere processen: " + toegevoegdeFrames);
+                //System.out.println("toegevoegdeFrames aan andere processen: " + toegevoegdeFrames);
             }
         }
         if (toegevoegdeFrames != null){
@@ -412,7 +412,7 @@ public class App {
                 toegevoegdeFrames.get(index).setPagenummer(-1);
             }
         }
-        System.out.println(ram.getList_frames());
+        //System.out.println(ram.getList_frames());
     }
     private int checkHoeveelFramesPerProcessToevoegen() {
         if (present_process_list.size() == 1){
@@ -427,7 +427,7 @@ public class App {
         else if(present_process_list.size() == 4){
             return 1;
         }
-        System.out.println("numberOfProcessesPresent: " + present_process_list.size());
+        //System.out.println("numberOfProcessesPresent: " + present_process_list.size());
         return 0;
     }
 
@@ -447,9 +447,9 @@ public class App {
                 //System.out.println("verwijderdeFrames: " + verwijderdeFrames);
             }
             for (Frame f : verwijderdeFrames){
+                removeFramesFromCurrentProcesses(f);
                 f.setPid(processID);
                 f.setPagenummer(-1);
-                removeFramesFromCurrentProcesses(f);
             }
             if (huidigeFramesPerProcess == null){
                 for (Frame f : ram.getList_frames()){
@@ -535,23 +535,26 @@ public class App {
 //        else if(numberOfProcessesPresent == 4){
 //            return numberOfFrames/4;                  //in wachtrij zetten
 //        }
-        System.out.println("numberOfProcessesPresent: " + numberOfProcessesPresent);
+        //System.out.println("numberOfProcessesPresent: " + numberOfProcessesPresent);
         return 0;
     }
 
     private void removeFramesFromCurrentProcesses(Frame frameVerwijderd) {
-        for (Process p :present_process_list){
-            if (p.getProcessID() == frameVerwijderd.getPid()){
-                for (Page page : p.getPageTable().getList_pages()){
-                    if (frameVerwijderd.getPagenummer() == page.getPageNumber()){
-                        page.setPresentBit(0);
-                        if (page.getModifyBit() == 1) {
-                            amountOfWrites++;
-                            page.setModifyBit(0);
-                        }
-                        page.setLastAccessTime(timer);
-                        page.setCorrespondingFrameNumber(-1);
+        //TODO: deze functie wordt eig nooit ver uitgevoerd
+        // het meegegeven frame is (bijna) altijd -1
+        // doordat write nog niet goed werkt?
+        if (frameVerwijderd.getPagenummer() != -1){
+            for (Process p :present_process_list){
+                if (p.getProcessID() == frameVerwijderd.getPid()) {
+                    Page page = p.getPageTable().getList_pages().get(frameVerwijderd.getPagenummer());
+                    page.setPresentBit(0);
+                    if (page.getModifyBit() == 1) {
+                        amountOfWrites++;
+                        page.setModifyBit(0);
+                        System.out.println(amountOfWrites);
                     }
+                    page.setLastAccessTime(timer);
+                    page.setCorrespondingFrameNumber(-1);
                 }
             }
         }
@@ -626,6 +629,7 @@ public class App {
         lru.setPresentBit(0);
         if (lru.getModifyBit() == 1) {
             amountOfWrites++;
+            System.out.println(amountOfWrites);
             lru.setModifyBit(0);
         }
         return frameNumber;
@@ -902,7 +906,6 @@ public class App {
             }
             else {
                 CurrentTimerLabel.setText("Finished time:");
-                System.out.println("All instructions are executed!");
                 restart();
             }
         });
@@ -911,12 +914,12 @@ public class App {
                 executeOneInstruction();
             }
             CurrentTimerLabel.setText("Finished time:");
-            System.out.println("All instructions are executed!");
             restart();
         });
     }
 
     private void restart() {
+        System.out.println("All instructions are executed!");
         initialiseren();
         readingWholeXMLFile();
     }
