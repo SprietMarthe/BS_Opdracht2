@@ -146,7 +146,7 @@ public class App {
     private JLabel NextInstrAddrValue;
     private JLabel OffsetValue;
 
-    static final int welkeXMLFile=3;
+    static final int welkeXMLFile=1;
     static List<Process> present_process_list;
     static List<Process> process_list;
     static int timer;
