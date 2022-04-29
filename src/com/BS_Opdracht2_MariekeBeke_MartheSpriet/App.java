@@ -158,7 +158,7 @@ public class App {
     private JButton allProcesses;
     private JButton oneProcess;
 
-    static final int welkeXMLFile=2;
+    static final int welkeXMLFile=1;
     static List<Process> present_process_list;
     static List<Process> process_list;
     static int timer;
@@ -260,6 +260,7 @@ public class App {
         else if (instruction.getOperation() == OperationProcess.Terminate){
             operationTerminate(instruction);
         }
+        timer++;
         changeGUIValuesOneProcess(instruction);
     }
 
@@ -311,8 +312,6 @@ public class App {
         // WRITE
         page.setModifyBit(1);
         page.setLastAccessTime(timer);
-
-        timer++;
     }
 
     private void operationRead(Instruction instruction) {
@@ -350,8 +349,6 @@ public class App {
 
         // READ
         page.setLastAccessTime(timer);
-
-        timer++;
     }
 
     private void operationStart(Instruction instruction) {
