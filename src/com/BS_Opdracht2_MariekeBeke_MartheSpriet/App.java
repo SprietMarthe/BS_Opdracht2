@@ -259,16 +259,10 @@ public class App {
 
 
     private void operationTerminate(Instruction instruction) {
-        Process process = null;
-        for (Process p: process_list){
-            if (p.getProcessID() == instruction.getProcessID()){
-                process = p;
-            }
-        }
+        Process process = findProcess(instruction.getProcessID());
         //System.out.print("Process verwijderd: " + process.getProcessID());
         removeProcessFromRAM(process);
     }
-
     private void operationWrite(Instruction instruction) {
         // VARIABLES BELONGING TO INSTRUCTION
         // Current process id
@@ -306,7 +300,6 @@ public class App {
         page.setModifyBit(1);
         page.setLastAccessTime(timer);
     }
-
     private void operationRead(Instruction instruction) {
         // VARIABLES BELONGING TO INSTRUCTION
         // Current process id
@@ -343,7 +336,6 @@ public class App {
         // READ
         page.setLastAccessTime(timer);
     }
-
     private void operationStart(Instruction instruction) {
         Process process = new Process(
                 instruction.getProcessID(),
@@ -360,12 +352,8 @@ public class App {
         int aantalFramesToegevoegdAanAndereProcesses = checkHoeveelFramesPerProcessToevoegen();
         //System.out.println("\n# Frames per process toegevoegd: " + aantalFramesToegevoegdAanAndereProcesses);
         List<Frame> toegevoegdeFrames = null;
-        for (Process p : present_process_list){
-            if (p == process){
-                toegevoegdeFrames = findAllFramesPerProcess(p);
-                //System.out.println("toegevoegdeFrames aan andere processen: " + toegevoegdeFrames);
-            }
-        }
+        toegevoegdeFrames = findAllFramesPerProcess(process);
+        //System.out.println("toegevoegdeFrames aan andere processen: " + toegevoegdeFrames);
         if (toegevoegdeFrames != null){
             if (waitingProcesses.isEmpty()){
                 if (toegevoegdeFrames.size() != 12){
@@ -374,7 +362,7 @@ public class App {
                     GivingFramesToOtherProcesses(toegevoegdeFrames, aantalFramesToegevoegdAanAndereProcesses);
                 }
                 else{
-                    //System.out.println("Laatste process verwijderd");
+                    //System.out.println("Geen processen meer in RAM");
                     setAllAddedFramesToNull(toegevoegdeFrames);
                     //System.out.println(ram.getList_frames());
                 }
@@ -463,15 +451,7 @@ public class App {
             waitingProcesses.add(process);
         //System.out.println("\nRam herverdeeld: " + ram);
     }
-    private Process findProcess(int processID) {
-        for (Process p: process_list){
-            if (p.getProcessID() == processID)
-                return p;
-        }
-        return null;
-    }
-
-    private List<Frame> findLRUFrame(List<Frame> verwijderdeFrames, List<Frame> huidigeFramesPerProcess, int aantalNogVerwijderen) {
+    private void findLRUFrame(List<Frame> verwijderdeFrames, List<Frame> huidigeFramesPerProcess, int aantalNogVerwijderen) {
         for (int i=0; i<aantalNogVerwijderen; i++){
             Frame LRUFrame = null;
             int LRUwaarde = -1;
@@ -493,9 +473,7 @@ public class App {
                 huidigeFramesPerProcess.remove(LRUFrame);
             }
         }
-        return verwijderdeFrames;
     }
-
     private int getLRU(Frame f) {
         int LATwaarde = -1;
         for (Process p :process_list){
@@ -507,7 +485,12 @@ public class App {
         }
         return LATwaarde;
     }
-
+    private int findLAT(Process p, int pagenummer) {
+        if (pagenummer != -1)
+            return p.getPageTable().getList_pages().get(pagenummer).getLastAccessTime();
+        else
+            return -1;
+    }
     private List<Frame> findAllFramesPerProcess(Process p) {
         List<Frame> huidigeFramesPerProcess = new ArrayList<>();
         for (Frame f : ram.getList_frames()){
@@ -517,7 +500,6 @@ public class App {
         }
         return huidigeFramesPerProcess;
     }
-
     private int checkHoeveelFramesPerProcessVerwijderen() {
         int numberOfProcessesPresent = present_process_list.size();
         if (numberOfProcessesPresent == 0){
@@ -538,7 +520,6 @@ public class App {
         //System.out.println("numberOfProcessesPresent: " + numberOfProcessesPresent);
         return 0;
     }
-
     private void removeFramesFromCurrentProcesses(Frame frameVerwijderd) {
         //TODO: deze functie wordt eig nooit ver uitgevoerd
         // het meegegeven frame is (bijna) altijd -1
@@ -558,12 +539,6 @@ public class App {
                 }
             }
         }
-    }
-    private int findLAT(Process p, int pagenummer) {
-        if (pagenummer != -1)
-            return p.getPageTable().getList_pages().get(pagenummer).getLastAccessTime();
-        else
-            return -1;
     }
 
     private boolean isProcessInRAM(int processID) {
@@ -633,6 +608,15 @@ public class App {
             lru.setModifyBit(0);
         }
         return frameNumber;
+    }
+
+
+    private Process findProcess(int processID) {
+        for (Process p: process_list){
+            if (p.getProcessID() == processID)
+                return p;
+        }
+        return null;
     }
 
     private void changeGUIValuesOneProcess(Instruction instruction) {
